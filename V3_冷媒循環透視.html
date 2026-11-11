@@ -901,13 +901,13 @@ const V3 = {
         H.text(ctx, '錶壓 kPa', X0 + W, Y0 + 36, { size: 14, align: 'right', color: C.mut }); H.text(ctx, '沸點', X0 - 50, Y0 - Hh - 14, { size: 14, color: C.mut });
         const k = ease(prog(t, 1, 6)); ctx.strokeStyle = C.acc; ctx.lineWidth = 4; ctx.beginPath();
         for (let g = 0; g <= 1800 * k; g += 20) { const x = px(g), y = py(satT(g)); g ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
-        H.text(ctx, 'R-134a 飽和曲線', px(1250), py(satT(1250)) + 30, { size: 16, bold: true, color: C.acc, alpha: k });
+        H.text(ctx, 'R-134a 飽和曲線', px(1300), py(satT(1300)) + 34, { size: 16, bold: true, color: C.acc, alpha: k });
         // 25℃ 環境線
         ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = '#9fb0cf'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X0, py(25)); ctx.lineTo(X0 + W, py(25)); ctx.stroke(); ctx.restore();
-        H.text(ctx, '空氣 25℃', X0 + W + 6, py(25), { size: 14, color: C.ink });
-        const dot = (g, col, s, t0) => { if (t < t0) return; const a = ease(prog(t, t0, t0 + 1)); ctx.fillStyle = col; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(px(g), py(satT(g)), 9, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
-          ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(px(g), Y0); ctx.lineTo(px(g), py(satT(g))); ctx.lineTo(X0, py(satT(g))); ctx.stroke(); ctx.restore(); H.text(ctx, s, px(g) + 14, py(satT(g)) - 16, { size: 15, bold: true, color: col, alpha: a }); };
-        dot(PL, '#38c6ff', `蒸發器 ${PL} kPa → ${Math.round(TE)}℃`, 10); dot(PH, '#ff7070', `冷凝器 ${PH} kPa → ${Math.round(TC)}℃`, 21);
+        H.text(ctx, '空氣 25℃', X0 + 8, py(25) - 12, { size: 14, color: C.ink });
+        const dot = (g, col, s, t0, up) => { if (t < t0) return; const a = ease(prog(t, t0, t0 + 1)); ctx.fillStyle = col; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(px(g), py(satT(g)), 9, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+          ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(px(g), Y0); ctx.lineTo(px(g), py(satT(g))); ctx.lineTo(X0, py(satT(g))); ctx.stroke(); ctx.restore(); H.text(ctx, s, up ? px(g) - 16 : px(g) + 18, up ? py(satT(g)) - 20 : py(satT(g)) + 20, { size: 15, bold: true, color: col, alpha: a, align: up ? 'right' : 'left' }); };
+        dot(PL, '#38c6ff', `蒸發器 ${PL} kPa → ${Math.round(TE)}℃`, 10); dot(PH, '#ff7070', `冷凝器 ${PH} kPa → ${Math.round(TC)}℃`, 21, true);
         // 右側說明
         H.box(ctx, 640, 70, 290, 380, {});
         if (t < 10) H.text(ctx, '壓力 ↓ → 沸點 ↓\n壓力 ↑ → 沸點 ↑\n\n（就像高山上煮水\n不到 100℃ 就滾）', 785, 140, { size: 20, bold: true, align: 'center' });
