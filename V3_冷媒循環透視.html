@@ -78,6 +78,13 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 
 .actbtn{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
 #actwrap{display:none}
+
+.qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
+
+.quiz{overflow:auto;align-items:flex-start}.quiz .card{margin:auto}
+
+.quiz .card.withref #qr{float:left;margin:4px 16px 8px 0}.quiz .card.withref #qr canvas{width:170px;height:170px}.quiz .card.withref #qr .qn{display:none}.quiz .card.withref #qo{overflow:hidden}.quiz .card.withref .ex{clear:both}
+@media(max-width:600px){.quiz .card.withref #qr{float:none}}
 .act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
 .acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
 .acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
@@ -122,6 +129,8 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .asend{color:var(--mut)}.asend.ok{color:var(--ok)}
 @media(max-width:700px){.amatch{grid-template-columns:1fr}.abins{grid-template-columns:1fr!important}.abin{min-height:80px}}
 .alive{min-height:0;margin:0 0 12px;font-weight:700;border-radius:10px}.alive.on{background:#3a2f10;border:2px solid var(--acc);padding:10px 14px;color:var(--acc)}.alive.go{background:#143a27;border:2px solid var(--ok);padding:10px 14px;color:var(--ok)}
+
+.qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
 </style></head><body>
 <script src="firebase-config.js"></script><script src="score.js"></script>
 <script>
@@ -291,7 +300,7 @@ function Player(cfg) {
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
-      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
@@ -348,7 +357,7 @@ function Player(cfg) {
   function showQuiz() {
     if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
     const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
-    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; const qr = $('#qr'); qr.innerHTML = ''; qr.style.display = q.ref ? '' : 'none'; $('#quiz .card').classList.toggle('withref', !!q.ref); if (q.ref) { if (typeof q.ref === 'function') q.ref(qr); else qr.innerHTML = q.ref; } $('#qgo').style.display = 'none';
     $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
     $('#qo').onclick = e => {
       const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
@@ -580,8 +589,9 @@ function Activity(root, cfg) {
     frame(r, `<div class="aq"></div>`);
     const chk = body.querySelector('#achk'); chk.style.display = 'none';
     function q() {
-      const [qq, opts, ex] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
-      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      const [qq, opts, ex, ref] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
+      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${ref ? '<div class="qref"></div>' : ''}${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      if (ref) { const el = body.querySelector('.qref'); if (typeof ref === 'function') ref(el); else el.innerHTML = ref; }
       body.querySelector('.aq').onclick = e => {
         const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const x = o[+b.dataset.k];
         if (x.ok) { if (!tried) pts++; body.querySelectorAll('.aopt').forEach(z => z.disabled = true); b.classList.add('ok');
@@ -801,6 +811,13 @@ function gauge(ctx, x, y, r, val, max, name, col) {
   H.text(ctx, `${Math.round(val)} kPa`, x, y + r + 14, { size: 16, bold: true, align: 'center' });
 }
 
+/* 題目用對照錶：在 el 裡畫一個沒有指針的低壓錶（外圈 kPa、內圈綠色 R-134a 飽和溫度），讓學生不需課本也能查 */
+function refGauge(el, note) {
+  const cv = document.createElement('canvas'); cv.width = 480; cv.height = 480; el.appendChild(cv);
+  const ctx = cv.getContext('2d'); ctx.translate(240, 240); gaugeLow(ctx, 0, 0, 230, null, false, true);
+  const n = document.createElement('div'); n.className = 'qn'; n.innerHTML = note || '📏 對照錶（R-134a 低壓錶）<br>外圈白色＝壓力 kPa<br>內圈<b style="color:#3ad07a">綠色＝R-134a 飽和溫度 ℃</b><br>找到溫度，再看同方向的壓力。'; el.appendChild(n);
+}
+
 /* 車輛空調檢修實習 V3 冷媒循環透視（第 2 次課）— 需先載入 common.js */
 /* 互動段量測點 */
 const MPTS = [
@@ -848,7 +865,7 @@ const V3 = {
       captions: [[0, '先認識整套系統。<b>壓縮機</b>：系統的心臟，由引擎皮帶帶動，提供冷媒循環的<b>動能</b>。', '先認識整套系統。壓縮機：系統的心臟，由引擎皮帶帶動，提供冷媒循環的動能。'],
         [7, '<b>冷凝器</b>在車頭、<b>蒸發器</b>在儀錶板內，兩個都是<b>熱交換</b>組件：冷凝器放熱、蒸發器吸熱。', '冷凝器在車頭、蒸發器在儀錶板內，兩個都是熱交換組件：冷凝器放熱、蒸發器吸熱。'],
         [16, '<b>膨脹閥</b>讓冷媒<b>節流降壓</b>；<b>儲液器</b>負責<b>過濾、乾燥、暫存</b>冷媒。', '膨脹閥讓冷媒節流降壓；儲液器負責過濾、乾燥、暫存冷媒。'],
-        [24, '課本把它們分成四類：<b>熱交換</b>（冷凝器、蒸發器）、<b>供應動能</b>（壓縮機）、<b>節流降壓</b>（膨脹閥）、<b>過濾暫存</b>（儲液器）。', '課本把它們分成四類：熱交換，是冷凝器和蒸發器；供應動能，是壓縮機；節流降壓，是膨脹閥；過濾暫存，是儲液器。']],
+        [24, '它們可以分成四類：<b>熱交換</b>（冷凝器、蒸發器）、<b>供應動能</b>（壓縮機）、<b>節流降壓</b>（膨脹閥）、<b>過濾暫存</b>（儲液器）。', '它們可以分成四類：熱交換，是冷凝器和蒸發器；供應動能，是壓縮機；節流降壓，是膨脹閥；過濾暫存，是儲液器。']],
       draw(ctx, t) {
         const hl = t < 7 ? 'comp' : t < 12 ? 'cond' : t < 16 ? 'evap' : t < 20 ? 'txv' : t < 24 ? 'rec' : null;
         drawAC(ctx, { hl, airT: t, on: true, blower: t >= 12 && t < 16 || t >= 24 });
@@ -878,7 +895,7 @@ const V3 = {
 
     { title: '高壓側與低壓側', dur: 32,
       captions: [[0, '系統被兩個元件分成兩半：從<b>壓縮機出口到膨脹閥入口</b>是<b>高壓側</b>（紅色），從<b>膨脹閥出口到壓縮機入口</b>是<b>低壓側</b>（藍色）。', '系統被兩個元件分成兩半：從壓縮機出口到膨脹閥入口是高壓側，紅色；從膨脹閥出口到壓縮機入口是低壓側，藍色。'],
-        [11, `外氣 25℃ 正常運轉時，高壓約 <b>${PH} kPa</b>（約 ${kgf(PH)} kgf/cm²）、低壓約 <b>${PL} kPa</b>（約 ${kgf(PL)} kgf/cm²），課本表 6-5 的範圍內。`, `外氣 25 度正常運轉時，高壓約 ${PH} 千帕，大約 ${kgf(PH)} 公斤每平方公分；低壓約 ${PL} 千帕，大約 ${kgf(PL)} 公斤每平方公分，在課本表 6-5 的範圍內。`],
+        [11, `外氣 25℃ 正常運轉時，高壓約 <b>${PH} kPa</b>（約 ${kgf(PH)} kgf/cm²）、低壓約 <b>${PL} kPa</b>（約 ${kgf(PL)} kgf/cm²），都在正常範圍內（外氣 25℃ 時高壓約 930～1130、低壓約 220～270 kPa）。`, `外氣 25 度正常運轉時，高壓約 ${PH} 千帕，大約 ${kgf(PH)} 公斤每平方公分；低壓約 ${PL} 千帕，大約 ${kgf(PL)} 公斤每平方公分，都在正常範圍內：外氣 25 度時，高壓約 930 到 1130、低壓約 220 到 270 千帕。`],
         [21, '高低壓兩側各有一個<b>檢修接口</b>：下一段就要學冷媒檢修錶怎麼接——<b>紅色接高壓、藍色接低壓</b>。', '高低壓兩側各有一個檢修接口：下一段就要學冷媒檢修錶怎麼接，紅色接高壓、藍色接低壓。']],
       draw(ctx, t) {
         drawAC(ctx, { sides: true, flow: t, airT: t, ports: t >= 21, bulb: true });
@@ -989,7 +1006,7 @@ const V3 = {
       { type: 'match', title: '位置與冷媒狀態配對', pairs: [['壓縮機出口', '高壓、高溫、氣態'], ['冷凝器出口', '高壓、中溫、液態'], ['膨脹閥出口', '低壓、低溫、霧狀'], ['蒸發器出口', '低壓、低溫、氣態'], ['冷凝器內', '凝結放熱'], ['蒸發器內', '汽化吸熱']] },
       { type: 'choice', title: '工場情境判斷', qs: [
         ['空調運轉中，戴手套摸壓縮機出口管，應該是？', ['很燙', '冰冷', '和外氣一樣', '會結霜'], '壓縮機出口是高壓、高溫氣態冷媒。'],
-        ['冷凝器風扇不轉（散熱不良），高壓錶讀數會？', ['偏高', '偏低', '變成 0', '不受影響'], '熱放不掉，冷媒凝結溫度與壓力都上升（課本表 6-6）。'],
+        ['冷凝器風扇不轉（散熱不良），高壓錶讀數會？', ['偏高', '偏低', '變成 0', '不受影響'], '熱放不掉，冷媒凝結溫度升高，高壓（和低壓）都會偏高。'],
         ['空調關閉一段時間後接上檢修錶，高低壓錶應該？', ['讀數接近相同', '高壓為 0', '低壓為真空', '兩錶都為 0'], '壓縮機停止後兩側會平衡到同一壓力。'],
         ['毛細管系統若少了蓄液器，最可能損壞的是？', ['壓縮機（液擠）', '冷凝器', '鼓風機', '暖氣芯子'], '液態冷媒被吸入壓縮機會造成液擠。']] },
     ],

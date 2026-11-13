@@ -78,6 +78,13 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 
 .actbtn{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
 #actwrap{display:none}
+
+.qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
+
+.quiz{overflow:auto;align-items:flex-start}.quiz .card{margin:auto}
+
+.quiz .card.withref #qr{float:left;margin:4px 16px 8px 0}.quiz .card.withref #qr canvas{width:170px;height:170px}.quiz .card.withref #qr .qn{display:none}.quiz .card.withref #qo{overflow:hidden}.quiz .card.withref .ex{clear:both}
+@media(max-width:600px){.quiz .card.withref #qr{float:none}}
 .act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
 .acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
 .acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
@@ -122,6 +129,8 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .asend{color:var(--mut)}.asend.ok{color:var(--ok)}
 @media(max-width:700px){.amatch{grid-template-columns:1fr}.abins{grid-template-columns:1fr!important}.abin{min-height:80px}}
 .alive{min-height:0;margin:0 0 12px;font-weight:700;border-radius:10px}.alive.on{background:#3a2f10;border:2px solid var(--acc);padding:10px 14px;color:var(--acc)}.alive.go{background:#143a27;border:2px solid var(--ok);padding:10px 14px;color:var(--ok)}
+
+.qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
 </style></head><body>
 <script src="firebase-config.js"></script><script src="score.js"></script>
 <script>
@@ -291,7 +300,7 @@ function Player(cfg) {
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
-      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
@@ -348,7 +357,7 @@ function Player(cfg) {
   function showQuiz() {
     if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
     const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
-    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; const qr = $('#qr'); qr.innerHTML = ''; qr.style.display = q.ref ? '' : 'none'; $('#quiz .card').classList.toggle('withref', !!q.ref); if (q.ref) { if (typeof q.ref === 'function') q.ref(qr); else qr.innerHTML = q.ref; } $('#qgo').style.display = 'none';
     $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
     $('#qo').onclick = e => {
       const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
@@ -580,8 +589,9 @@ function Activity(root, cfg) {
     frame(r, `<div class="aq"></div>`);
     const chk = body.querySelector('#achk'); chk.style.display = 'none';
     function q() {
-      const [qq, opts, ex] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
-      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      const [qq, opts, ex, ref] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
+      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${ref ? '<div class="qref"></div>' : ''}${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      if (ref) { const el = body.querySelector('.qref'); if (typeof ref === 'function') ref(el); else el.innerHTML = ref; }
       body.querySelector('.aq').onclick = e => {
         const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const x = o[+b.dataset.k];
         if (x.ok) { if (!tried) pts++; body.querySelectorAll('.aopt').forEach(z => z.disabled = true); b.classList.add('ok');
@@ -801,6 +811,13 @@ function gauge(ctx, x, y, r, val, max, name, col) {
   H.text(ctx, `${Math.round(val)} kPa`, x, y + r + 14, { size: 16, bold: true, align: 'center' });
 }
 
+/* 題目用對照錶：在 el 裡畫一個沒有指針的低壓錶（外圈 kPa、內圈綠色 R-134a 飽和溫度），讓學生不需課本也能查 */
+function refGauge(el, note) {
+  const cv = document.createElement('canvas'); cv.width = 480; cv.height = 480; el.appendChild(cv);
+  const ctx = cv.getContext('2d'); ctx.translate(240, 240); gaugeLow(ctx, 0, 0, 230, null, false, true);
+  const n = document.createElement('div'); n.className = 'qn'; n.innerHTML = note || '📏 對照錶（R-134a 低壓錶）<br>外圈白色＝壓力 kPa<br>內圈<b style="color:#3ad07a">綠色＝R-134a 飽和溫度 ℃</b><br>找到溫度，再看同方向的壓力。'; el.appendChild(n);
+}
+
 /* 車輛空調檢修實習 V4 冷媒檢修錶（第 2 次課）— 需先載入 common.js
    課本 2-2（p23–36）：單位換算、飽和、過熱過冷、檢修錶構造、四種閥位、錶面判讀、專用錶組、連接與拆卸、冷凍油 */
 /* 課本表 2-1：R-134a 飽和壓力（錶壓）—溫度 */
@@ -873,7 +890,7 @@ function gaugeLow(ctx, x, y, r, v, hl, big) {
         if (a - last < rad(9)) continue; last = a; H.text(ctx, T, x + Math.cos(a) * r * .46, y + Math.sin(a) * r * .46, { size: fs * .85, align: 'center', color: '#3ad07a' }); }
       H.text(ctx, 'kPa', x, y + r * .32, { size: fs, align: 'center', color: '#e6ecf5' }); H.text(ctx, 'R-134a ℃', x, y + r * .48, { size: fs * .85, align: 'center', color: '#3ad07a' }); H.text(ctx, '真空 mmHg', x - r * .25, y + r * .74, { size: fs * .8, align: 'center', color: '#ff8a8a' }); }
     else H.text(ctx, '低壓', x, y + r * .4, { size: fs * 1.3, bold: true, align: 'center', color: '#38c6ff' }); }
-  needle(ctx, x, y, r, ang(v));
+  if (v != null) needle(ctx, x, y, r, ang(v));
 }
 function gaugeHigh(ctx, x, y, r, v, hl) {
   const ang = p => rad(135) + rad(270) * clamp(p / HMAX, 0, 1);
@@ -1006,7 +1023,7 @@ const V4 = {
         else { H.text(ctx, '指針 200 kPa（2 bar）\n↓\n綠圈 R-134a ≒ 1℃\n\n冷媒在這個壓力下\n約 1℃ 沸騰', 750, 105, { size: 21, bold: true, align: 'center', color: '#3ad07a' });
           if (t >= 42) H.text(ctx, '同樣 2 bar：R-22 約 −15℃\n→ 可判斷冷媒種類', 750, 390, { size: 16, align: 'center', color: C.mut }); }
       },
-      quiz: { q: '低壓錶指針指在 200 kPa，R-134a 冷媒在此壓力下的飽和溫度約為？', opts: ['1℃', '20℃', '−26℃', '45℃'], ans: 0, ex: '從錶面綠色的 R-134a 溫度刻度直接讀出，約 1℃（課本 p30 例）。' } },
+      quiz: { q: '低壓錶指針指在 200 kPa，R-134a 冷媒在此壓力下的飽和溫度約為？', opts: ['1℃', '20℃', '−26℃', '45℃'], ans: 0, ex: '從錶面綠色的 R-134a 溫度刻度直接讀出，約 1℃。' } },
 
     { title: '讀錶練習（互動）', loop: true, nominal: 30,
       captions: [[0, '看指針，讀出<b>壓力</b>和 R-134a 的<b>飽和溫度</b>（綠色刻度），選出正確答案。答對 4 題就能完成本段。', '看指針，讀出壓力和 R 134 a 的飽和溫度，也就是綠色刻度，選出正確答案。答對四題就能完成本段。']],
@@ -1028,7 +1045,7 @@ const V4 = {
           g('ops').innerHTML = q.opts.map(([T, p], j) => `<button data-j="${j}" ${q.done ? 'disabled' : ''}>${p} kPa／${T}℃</button>`).join('');
           g('ops').querySelectorAll('button').forEach(b => b.onclick = () => { const [T, P] = q.opts[+b.dataset.j]; q.done = true;
             const okT = T === q.T, okP = P === q.p;
-            if (okT && okP) { S.ok++; S.msg = `<b style="color:#3ad07a">✔ 正確！</b> 課本表 2-1：${q.p} kPa ↔ ${q.T}℃`; }
+            if (okT && okP) { S.ok++; S.msg = `<b style="color:#3ad07a">✔ 正確！</b> R-134a 飽和壓力：${q.p} kPa ↔ ${q.T}℃`; }
             else S.msg = `<b style="color:#ff7070">✘ ${!okP && !okT ? '壓力和溫度都不對' : !okP ? '壓力讀錯了' : '溫度讀錯了'}</b>：指針在 ${q.p} kPa，綠圈對到 ${q.T}℃`; S.upd(); }); };
         g('nx').onclick = () => S.newQ(); S.upd();
       },
@@ -1039,7 +1056,7 @@ const V4 = {
         H.text(ctx, '壓力是多少 kPa？\nR-134a 飽和溫度\n（綠色刻度）是幾 ℃？', 770, 160, { size: 21, bold: true, align: 'center' });
         H.text(ctx, '提示：先讀外圈白色 kPa\n再看同方向的綠色數字', 770, 290, { size: 15, align: 'center', color: C.mut });
       },
-      quiz: { q: 'R-134a 系統在 25℃ 時的飽和壓力（課本表 2-1）約為？', opts: ['563.9 kPa', '191.5 kPa', '1217.9 kPa', '101.3 kPa'], ans: 0, ex: '25℃ ↔ 563.9 kPa；這也是 25℃ 時空調停機的平衡壓力。' } },
+      quiz: { q: 'R-134a 系統在 25℃ 時的飽和壓力約為？（對照錶面：先找綠色 25，再看同方向的 kPa）', ref: el => refGauge(el), opts: ['563.9 kPa', '191.5 kPa', '1217.9 kPa', '101.3 kPa'], ans: 0, ex: '綠色 25 對到 500～600 之間，約 564 kPa；這也是 25℃ 時空調停機的平衡壓力。' } },
 
     { title: '過熱與過冷', dur: 40,
       captions: [[0, '<b>過熱</b>：冷媒完全汽化後再被加熱，溫度<b>高於</b>該壓力下的飽和溫度。例：低壓側飽和溫度 2℃，管路實測 5℃ → <b>過熱度 3℃</b>。', '過熱：冷媒完全汽化後再被加熱，溫度高於該壓力下的飽和溫度。例如：低壓側飽和溫度 2 度，管路實測 5 度，過熱度就是 3 度。'],
@@ -1155,7 +1172,7 @@ const V4 = {
       { type: 'choice', title: '讀錶與換算', qs: [
         ['低壓錶指在 2 bar，等於多少 kPa？', ['200 kPa', '20 kPa', '2000 kPa', '0.2 kPa'], '1 bar＝100 kPa。'],
         ['1 kg/cm² 約等於多少 kPa？', ['98 kPa', '14.22 kPa', '760 kPa', '1000 kPa'], '1 kg/cm²≒0.98 bar≒98 kPa（≒14.22 psi）。'],
-        ['R-134a 在 0℃ 的飽和壓力（表 2-1）約為？', ['191.5 kPa', '563.9 kPa', '101.3 kPa', '0 kPa'], '課本表 2-1：0℃ ↔ 191.5 kPa。'],
+        ['R-134a 在 0℃ 的飽和壓力約為？（對照錶面）', ['191.5 kPa', '563.9 kPa', '101.3 kPa', '0 kPa'], '綠色 0 對到約 190 kPa；0℃ ↔ 191.5 kPa。', el => refGauge(el)],
         ['低壓飽和溫度 4℃，蒸發器出口管實測 10℃，過熱度為？', ['6℃', '14℃', '4℃', '10℃'], '過熱度＝10－4＝6℃。'],
         ['劣化的冷凍油外觀通常是？', ['棕色混濁', '無色透明', '藍色', '綠色螢光'], '新油無色透明，劣化後棕色混濁。']] },
     ],
