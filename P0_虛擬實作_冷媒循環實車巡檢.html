@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P0 冷媒循環實車巡檢｜虛擬實作評量</title>
+<style>
+:root{--bg:#0a1120;--panel:#121c30;--panel2:#18243d;--line:#2a3a5c;--ink:#e6ecf5;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ad07a;--bad:#ff5d5d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0}header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:8px;padding:2px 10px}header a{color:var(--acc2);margin-left:auto}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px;padding:12px 16px}
+@media(max-width:1000px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0d1526;border:1px solid var(--line);border-radius:14px;overflow:hidden;align-self:start}
+svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none}
+.side{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:16px;color:var(--acc)}
+.stat{display:flex;gap:10px;flex-wrap:wrap;font-size:15px;align-items:baseline}.stat b{font-size:19px}
+.steps{margin:0;padding-left:22px;font-size:14px;line-height:1.55}.steps li.done{color:var(--ok)}.steps li.now{color:var(--acc);font-weight:700}.steps li.wk{margin-bottom:6px}.steps li.blink{background:#ffb02033;border-radius:6px}
+.steps .why{font-weight:400;color:#ffd23f;font-size:13px;margin:2px 0 4px}
+.log{font-size:13px;line-height:1.5;max-height:160px;overflow:auto;color:var(--mut)}.log .m{color:var(--bad);font-weight:700}.log .d{color:#ffb86b}.log .g{color:var(--ok)}
+button{font:inherit;font-size:15px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:7px 12px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#1a1200;font-weight:700}button.on{background:#ffd23f;color:#1a1200;border-color:#ffd23f;font-weight:700}button:disabled{opacity:.45;cursor:default}
+select,input{font:inherit;font-size:14px;padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:#0d1526;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+#menu{position:absolute;display:none;z-index:5;background:#0b1424f2;border:2px solid var(--acc);border-radius:12px;padding:8px;min-width:240px;max-width:330px;box-shadow:0 8px 30px #000a}
+#menu .t{font-size:13px;color:var(--mut);margin:0 4px 6px}#menu button{display:block;width:100%;text-align:left;margin:4px 0;font-size:15px}
+#alert{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;z-index:8}
+#alert .box{background:var(--panel);border:3px solid var(--bad);border-radius:16px;padding:20px 24px;max-width:560px;text-align:center}#alert h2{margin:0 0 8px;color:var(--bad)}#alert p{font-size:17px;line-height:1.6}
+#recCard .row input{width:76px}table.rec{width:100%;border-collapse:collapse;font-size:13px}table.rec th,table.rec td{border-bottom:1px solid var(--line);padding:3px 2px;text-align:center}table.rec input{width:62px}
+.ok{color:var(--ok)}.ng{color:var(--bad)}
+.result{font-size:15px;line-height:1.6}.result table{width:100%;border-collapse:collapse;font-size:14px}.result td{border-bottom:1px solid var(--line);padding:4px 6px;vertical-align:top}
+.pass{color:var(--ok);font-size:26px;font-weight:800}.fail{color:var(--bad);font-size:26px;font-weight:800}
+.cert{border:3px double var(--ok);border-radius:12px;padding:10px;margin-top:8px;text-align:center}
+.hint{font-size:13px;color:var(--mut)}
+.adv .q{margin:10px 0;padding:8px;border:1px solid var(--line);border-radius:10px}.adv .q b{color:var(--acc)}.adv .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+</style></head><body>
+<script src="firebase-config.js"></script><script src="score.js"></script>
+<header><span class="tag">虛擬實作 P0</span><h1>冷媒循環 實車巡檢</h1><span class="hint">元件指認・管路追蹤・量測判斷</span><a href="index.html">← 課程首頁</a></header>
+<div class="main">
+  <div class="stage"><svg id="sv" viewBox="0 0 1000 620"></svg><div id="menu"></div>
+    <div id="alert"><div class="box"><h2 id="aT"></h2><p id="aP"></p><button class="pri" id="aB">知道了</button></div></div></div>
+  <div class="side">
+    <div class="card" id="setup"></div>
+    <div class="card"><div class="stat"><span>模式：<b id="sMode">—</b></span><span>⏱ <b id="sTime">0:00</b></span><span>分數 <b id="sScore">100</b></span></div>
+      <div class="row hint" id="sPpe"></div>
+      <div class="row"><button id="flowB" style="display:none">🔁 標示冷媒流向</button><button id="hintB" style="display:none">💡 提示</button></div>
+      <div id="hintMsg" style="color:#ffd23f;font-size:15px;font-weight:700"></div></div>
+    <div class="card" id="stepCard"><h3 id="stepTitle">📋 工作單</h3><ol class="steps" id="steps"></ol></div>
+    <div class="card" id="recCard" style="display:none"><h3>📝 巡檢紀錄表</h3>
+      <div class="row">低壓錶 <input id="gLP" type="number"> kPa → 飽和溫度 <input id="gLT" type="number" step="0.5"> ℃</div>
+      <div class="row">高壓錶 <input id="gHP" type="number"> kPa → 飽和溫度 <input id="gHT" type="number" step="0.5"> ℃</div>
+      <table class="rec"><tr><th>點</th><th>高／低壓側</th><th>實測 ℃</th><th>冷媒狀態</th><th></th></tr><tbody id="recRows"></tbody></table>
+      <div class="hint">判斷狀態：實測溫度比該側飽和溫度<b>高</b>＝過熱氣態；<b>低</b>＝過冷液態；<b>差不多（±2℃）</b>＝霧狀（正在沸騰或凝結）。</div>
+      <div class="row"><button id="chkB" style="display:none">檢查紀錄</button><span class="hint" id="chkMsg"></span></div></div>
+    <div class="card"><h3>操作紀錄</h3><div class="log" id="log"></div></div>
+  </div>
+</div>
+<script>
+/* ===== R-134a 飽和表（℃, 絕對 MPa）；錶壓 kPa＝(絕對−0.1013)×1000；與課本表 2-1 一致 ===== */
+const R134A = [[-26.07, .1013], [-20, .1327], [-10, .2006], [0, .2928], [5, .3497], [10, .4146], [20, .5717], [25, .6654], [30, .7702], [35, .8870], [40, 1.0166], [45, 1.1599], [50, 1.3179], [55, 1.4920], [60, 1.6818], [65, 1.8890], [70, 2.1168]];
+const satT = g => { const a = g / 1000 + .1013; for (let i = 1; i < R134A.length; i++) { const [t1, p1] = R134A[i - 1], [t2, p2] = R134A[i]; if (a <= p2 || i === R134A.length - 1) return t1 + (t2 - t1) * (a - p1) / (p2 - p1); } };
+const satP = T => { for (let i = 1; i < R134A.length; i++) { const [t1, p1] = R134A[i - 1], [t2, p2] = R134A[i]; if (T <= t2 || i === R134A.length - 1) return (p1 + (p2 - p1) * (T - t1) / (t2 - t1) - .1013) * 1000; } };
+/* 課本表 6-5 正常範圍中間值（外氣 25／30／35℃） */
+const lin = (x, pts) => { for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) { const [a, p] = pts[i - 1], [b, q] = pts[i]; return p + (q - p) * (x - a) / (b - a); } return pts[pts.length - 1][1]; };
+const PHof = a => lin(a, [[25, 1030], [30, 1365], [35, 1435]]), PLof = a => lin(a, [[25, 245], [30, 320], [35, 385]]);
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const LIMIT = 900, PASS = 80, HINT_MAX = 3, HINT_PASS = 2, IDLE = 45;
+const MODE = { guide: '練習 1：導引', mock: '練習 2：工作單', exam: '檢定' };
+
+/* ===== 元件與名稱、功能 ===== */
+const NAMES = ['壓縮機', '冷凝器', '蒸發器', '儲液器', '蓄液器', '膨脹閥', '毛細管（限流管）', '水箱'];
+const FUNCS = ['熱交換：放熱（冷媒凝結）', '熱交換：吸熱（冷媒汽化）', '供應動能（壓縮冷媒）', '節流降壓', '過濾、乾燥、暫存冷媒（高壓側）', '氣液分離、防液擠（低壓側）'];
+const COMP = {
+  comp: { n: '壓縮機', f: 2 }, cond: { n: '冷凝器', f: 0 }, evap: { n: '蒸發器', f: 1 },
+  rec: { n: '儲液器', f: 4 }, acc: { n: '蓄液器', f: 5 }, txv: { n: '膨脹閥', f: 3 }, ori: { n: '毛細管（限流管）', f: 3 },
+};
+const FLOW = { txv: ['comp', 'cond', 'rec', 'txv', 'evap'], ori: ['comp', 'cond', 'ori', 'evap', 'acc'] };
+/* 管路段：pts、真實側別 */
+const SEGS = {
+  txv: { dis: { p: [[95, 250], [95, 80], [90, 80]], s: 'H' }, liqA: { p: [[560, 95], [596, 95]], s: 'H' }, liqB: { p: [[607, 150], [607, 432]], s: 'H' },
+    evIn: { p: [[607, 462], [607, 500]], s: 'L' }, suc: { p: [[430, 536], [430, 425], [160, 425], [160, 300], [140, 300]], s: 'L' } },
+  ori: { dis: { p: [[95, 250], [95, 80], [90, 80]], s: 'H' }, liq: { p: [[560, 95], [607, 95], [607, 404]], s: 'H' },
+    evIn: { p: [[607, 440], [607, 500]], s: 'L' }, sucA: { p: [[430, 536], [430, 425], [400, 425]], s: 'L' }, sucB: { p: [[340, 425], [160, 425], [160, 300], [140, 300]], s: 'L' } },
+};
+const SEGNAME = { dis: '壓縮機→冷凝器', liqA: '冷凝器→儲液器', liqB: '儲液器→膨脹閥', liq: '冷凝器→毛細管', evIn: '節流後→蒸發器', suc: '蒸發器→壓縮機', sucA: '蒸發器→蓄液器', sucB: '蓄液器→壓縮機' };
+/* 量測點（真值在 fresh() 依外氣計算）；hz：附近危險 */
+const PTS = {
+  txv: { A: { x: 95, y: 205, side: 'H', hz: 'belt' }, B: { x: 578, y: 95, side: 'H', hz: 'fan' }, C: { x: 607, y: 482, side: 'L' }, D: { x: 430, y: 470, side: 'L' }, E: { x: 300, y: 425, side: 'L' } },
+  ori: { A: { x: 95, y: 205, side: 'H', hz: 'belt' }, B: { x: 585, y: 95, side: 'H', hz: 'fan' }, C: { x: 607, y: 470, side: 'L' }, D: { x: 430, y: 470, side: 'L' }, E: { x: 270, y: 425, side: 'L' } },
+};
+const PTNAME = { A: '壓縮機出口', B: '冷凝器出口', C: '蒸發器入口', D: '蒸發器出口', E: '壓縮機入口' };
+const STATE = ['氣態', '液態', '霧狀（液＋氣）'];
+
+const MAJOR = { belt: '引擎運轉中，手伸過皮帶附近量測（捲入危險）', fan: '手伸過運轉中的冷凝器風扇量測（捲入危險）', burn: '徒手觸摸高溫的高壓管（燙傷）', time: '超過檢定時間（15 分鐘）未完成' };
+const DED = {
+  ppe: ['未配戴護目鏡、手套即進行巡檢', 5], idName: ['元件名稱錯誤', 4], idFunc: ['元件功能錯誤', 2], idMiss: ['元件未指認', 4],
+  flow: ['冷媒流向順序錯誤或未完成', 10], seg: ['管路高低壓標示錯誤或未標示', 3], far: ['測溫儀距離太遠（讀到周圍平均溫度）', 5], touch: ['徒手觸摸管路', 5],
+  noMeas: ['未實際量測就填寫溫度', 5], gP: ['壓力錶讀數錯誤', 5], gT: ['飽和溫度換算錯誤', 5], rSide: ['量測點高低壓側判斷錯誤', 2], rTemp: ['量測溫度紀錄錯誤', 2], rState: ['冷媒狀態判斷錯誤', 4], hint: ['使用提示卡', 5],
+};
+const CAT = { 元件指認: ['idName', 'idFunc', 'idMiss'], 流向與管路: ['flow', 'seg'], 量測操作: ['ppe', 'far', 'touch', 'noMeas'], 紀錄判讀: ['gP', 'gT', 'rSide', 'rTemp', 'rState'], 提示: ['hint'] };
+const STEPS = [
+  ['ppe', '配戴護目鏡與手套'], ['ir', '拿起紅外線測溫儀'], ['id', '指認 5 個元件（名稱＋功能）'], ['flow', '按「標示冷媒流向」，從壓縮機依序點元件'],
+  ['seg', '標示每一段管路是高壓側或低壓側'], ['gauge', '放大讀高、低壓錶，換算飽和溫度填入紀錄表'], ['meas', '量測 5 個量測點的管路溫度'],
+  ['rec', '紀錄表：每一點的側別、實測溫度、冷媒狀態'], ['fin', '按「完成作業」'],
+];
+const WORK = [
+  { t: '作業前準備', d: '個人防護、量測工具', k: ['ppe', 'ir'] },
+  { t: '元件指認', d: '找出冷氣系統的 5 個元件，說出名稱與功能', k: ['id'] },
+  { t: '冷媒流向與高低壓', d: '標示冷媒流動順序、每段管路屬於哪一側', k: ['flow', 'seg'] },
+  { t: '系統量測', d: '讀檢修錶、量測 5 個點的管路溫度', k: ['gauge', 'meas'] },
+  { t: '判斷與紀錄', d: '完成巡檢紀錄表，按「完成作業」', k: ['rec', 'fin'] },
+];
+const WHY = {
+  ppe: '巡檢時引擎和冷氣都在運轉，管路有高溫也有低溫，接頭附近可能噴出冷媒。', ir: '用測溫儀量管路溫度，比用手摸準確又安全。',
+  id: '點車上的每個元件，先選名稱、再選功能。這台車可能是膨脹閥系統，也可能是毛細管系統，看清楚有沒有儲液器或蓄液器。',
+  flow: '冷媒從壓縮機出發：壓縮機 → 冷凝器 → …… 回到壓縮機。依照順序點元件。', seg: '壓縮機把壓力升高、膨脹閥（毛細管）把壓力降低，這兩個元件就是高低壓的分界。',
+  gauge: '點檢修錶面放大，讀出壓力，再看同方向的綠色刻度就是飽和溫度。', meas: '測溫儀靠近管路（約 5 cm）量才準；靠近皮帶、風扇的點，要從側面避開。',
+  rec: '把實測溫度和同一側的飽和溫度比較：高＝氣態、低＝液態、差不多＝霧狀。', fin: '全部填好、檢查過後，按「完成作業」。',
+};
+const HINT = {
+  ppe: '看看右側工具架上的護具。', ir: '工具架上還有一樣量測工具。', id: '還有元件沒有指認（點車上的元件）。', flow: '按右邊的「🔁 標示冷媒流向」，從壓縮機開始點。',
+  seg: '還有管路沒有標示高壓或低壓（點管路）。', gauge: '點右上角檢修錶的錶面放大來讀。', meas: '還有黃色量測點沒有量（拿著測溫儀點它）。', rec: '紀錄表還有欄位沒填。', fin: '都完成了嗎？檢查後按「完成作業」。',
+};
+
+let S = null, timer = null, who = { cls: store.get('act_cls'), grp: store.get('act_grp'), op: store.get('p1_op') || '1' };
+function fresh(mode) {
+  const sys = Math.random() < .5 ? 'txv' : 'ori', amb = 25 + Math.floor(Math.random() * 11);
+  const PH = Math.round(PHof(amb)), PL = Math.round(PLof(amb)), TC = satT(PH), TE = satT(PL);
+  const truth = { A: [TC + 18, 0], B: [TC - 6, 1], C: [TE, 2], D: sys === 'txv' ? [TE + 5, 0] : [TE, 2], E: [TE + (sys === 'txv' ? 7 : 4), 0] };
+  const nz = () => Math.round((Math.random() - .5) * 8) / 10;
+  Object.keys(truth).forEach(k => truth[k][0] = Math.round((truth[k][0] + nz()) * 10) / 10);
+  const order = ['A', 'B', 'C', 'D', 'E'].sort(() => Math.random() - .5);   // 量測點編號隨機
+  S = { mode, sys, amb, PH, PL, TC, TE, truth, order, t0: Date.now(), sec: 0, end: false,
+    ppe: { g: false, h: false }, ir: false, ans: {}, flow: [], flowMode: false, segMark: {}, meas: {}, far: {}, zoom: null,
+    ded: {}, major: null, majors: [], log: [], done: new Set(), hints: 0, lastAct: Date.now(), nudged: false, flash: 0, hintMsg: '' };
+  clearInterval(timer); timer = setInterval(tick, 500);
+  buildRec(); log(`開始${MODE[mode]}。外氣 ${amb}℃，引擎怠速、冷氣全開運轉中；檢修錶已由老師接好。`, 'g'); render();
+}
+function tick() {
+  if (!S || S.end) return; S.sec = (Date.now() - S.t0) / 1000; $('#sTime').textContent = fmt(S.sec);
+  if (S.mode === 'exam' && S.sec > LIMIT) major('time');
+  if (S.mode !== 'guide' && !S.nudged && Date.now() - S.lastAct > IDLE * 1000) { S.nudged = true; S.flash = Date.now(); const w = curWork(); if (w >= 0) { log(`⏳ 停很久了：目前在工作單第 ${w + 1} 項「${WORK[w].t}」。`, 'd'); render(); } }
+  if (S.flash && Date.now() - S.flash < 4500) { const el = document.querySelector('.wk.now'); if (el) el.classList.toggle('blink'); }
+  if (!S.zoom) { const f = document.getElementById('fanRot'); if (f) f.setAttribute('transform', `rotate(${(Date.now() / 3) % 360} 0 0)`); }
+}
+const curWork = () => WORK.findIndex(w => w.k.some(k => !S.done.has(k)));
+const nextStep = () => STEPS.find(([k]) => !S.done.has(k));
+function log(s, c = '') { S.log.unshift(`<div class="${c}">[${fmt(S.sec || 0)}] ${s}</div>`); }
+function ded(k, tag = '') { const key = k + (tag ? '|' + tag : ''); if (S.ded[key]) return; S.ded[key] = DED[k][1]; log(`扣分 −${DED[k][1]}：${DED[k][0]}${tag ? '（' + tag + '）' : ''}`, 'd'); }
+function major(k) {
+  if (S.end) return; log(`重大缺失：${MAJOR[k]}`, 'm');
+  if (S.mode === 'exam') { S.major = k; finish(); }
+  else { S.majors.push(k); showAlert('⚠ 重大缺失', `${MAJOR[k]}<br><br>檢定模式中，這一項會<b>直接不及格</b>。<br>（練習模式可以繼續操作）`); }
+}
+const score = () => Math.max(0, 100 - Object.values(S.ded).reduce((a, b) => a + b, 0));
+function showAlert(t, p) { $('#aT').textContent = t; $('#aP').innerHTML = p; $('#alert').style.display = 'flex'; }
+$('#aB').onclick = () => { $('#alert').style.display = 'none'; };
+
+/* ===== 動作選單 ===== */
+function menu(x, y, title, items) {
+  const m = $('#menu'), st = $('.stage').getBoundingClientRect(), sv = $('#sv').getBoundingClientRect(), k = sv.width / 1000;
+  m.innerHTML = `<div class="t">${title}</div>` + items.map((it, i) => `<button data-i="${i}">${it[0]}</button>`).join('') + '<button data-i="x">✕ 取消</button>';
+  m.style.display = 'block'; let L = x * k + 10, T = y * k + 10; if (L + 260 > st.width) L = Math.max(4, st.width - 270); if (T + m.offsetHeight > st.height) T = Math.max(4, st.height - m.offsetHeight - 6);
+  m.style.left = L + 'px'; m.style.top = T + 'px';
+  m.querySelectorAll('button').forEach(b => b.onclick = e => { e.stopPropagation(); m.style.display = 'none'; if (b.dataset.i !== 'x') { items[+b.dataset.i][1](); after(); } });
+}
+function after() { checkSteps(); if (S.hintMsg && S.hintStep !== nextStep()?.[0]) S.hintMsg = ''; S.hintStep = nextStep()?.[0]; render(); }
+const compsOf = () => S.sys === 'txv' ? ['comp', 'cond', 'rec', 'txv', 'evap'] : ['comp', 'cond', 'ori', 'evap', 'acc'];
+
+function act(obj, x, y) {
+  if (!S || S.end) return; S.lastAct = Date.now(); S.nudged = false; S.flash = 0;
+  if (obj === 'zoomX') { S.zoom = null; return render(); }
+  if (obj === 'gL' || obj === 'gH') { S.zoom = obj.slice(1); return render(); }
+  if (S.flowMode && obj.startsWith('c:')) { const c = obj.slice(2);
+    if (S.flow.includes(c)) { log('這個元件已經點過了。'); return render(); }
+    S.flow.push(c); log(`流向第 ${S.flow.length} 站：${S.ans[c] ? S.ans[c].n : '（尚未指認的元件）'}`);
+    if (S.flow.length >= 5) { S.flowMode = false; log('冷媒流向標示完成。', 'g'); } return after(); }
+  if (obj === 'gog') return menu(x, y, '護目鏡', [['配戴護目鏡', () => { S.ppe.g = true; log('配戴護目鏡。', 'g'); }]]);
+  if (obj === 'glv') return menu(x, y, '手套', [['配戴手套', () => { S.ppe.h = true; log('配戴手套。', 'g'); }]]);
+  if (obj === 'irT') return menu(x, y, '紅外線測溫儀', [[S.ir ? '放回工具架' : '拿起測溫儀', () => { S.ir = !S.ir; log(S.ir ? '拿起紅外線測溫儀。' : '放回測溫儀。'); }]]);
+  if (obj.startsWith('d:')) return menu(x, y, { rad: '水箱（引擎冷卻系統）', fan: '電動風扇', eng: '引擎本體', blw: '鼓風機' }[obj.slice(2)] || '', [['這不是冷媒循環的元件，略過', () => log('略過非冷媒循環元件。')]]);
+  if (obj.startsWith('c:')) { const c = obj.slice(2);
+    return menu(x, y, '這是什麼元件？（名稱）', NAMES.map(n => [n, () => setTimeout(() => menu(x, y, `「${n}」的功能是？`, FUNCS.map((f, fi) => [f, () => {
+      S.ans[c] = { n, f: fi }; log(`指認：${n}｜${f}`);
+      if (S.mode === 'guide') { const ok = COMP[c].n === n && COMP[c].f === fi; log(ok ? '✔ 正確' : `✘ 不對，再想想（名稱${COMP[c].n === n ? '對' : '錯'}、功能${COMP[c].f === fi ? '對' : '錯'}）`, ok ? 'g' : 'd'); }
+    }])), 0)])); }
+  if (obj.startsWith('s:')) { const k = obj.slice(2);
+    return menu(x, y, `管路：這一段是？`, [['標示為高壓側（紅）', () => { S.segMark[k] = 'H'; log('標示管路為高壓側。'); }], ['標示為低壓側（藍）', () => { S.segMark[k] = 'L'; log('標示管路為低壓側。'); }]]); }
+  if (obj.startsWith('p:')) return pointMenu(obj.slice(2), x, y);
+  if (obj === 'done') return finishCheck();
+}
+function pointMenu(id, x, y) {
+  const P = PTS[S.sys][id], n = S.order.indexOf(id) + 1, T = S.truth[id][0], items = [];
+  const doMeas = far => () => { if (!S.ppe.g || !S.ppe.h) ded('ppe');
+    const v = far ? Math.round((T * .4 + S.amb * .6) * 10) / 10 : T; S.meas[id] = v; S.far[id] = far; if (far) ded('far');
+    log(`量測點 ${n}：測溫儀讀數 ${v.toFixed(1)}℃${far ? '（距離約 50 cm）' : ''}`, far ? 'd' : 'g'); };
+  if (S.ir) {
+    if (P.hz) { items.push([`從側面避開${P.hz === 'belt' ? '皮帶' : '風扇'}，距管路約 5 cm 量測`, doMeas(false)]);
+      items.push([`手伸過${P.hz === 'belt' ? '皮帶' : '風扇'}上方，距管路約 5 cm 量測`, () => { major(P.hz); }]);
+      items.push(['站遠一點，距管路約 50 cm 量測', doMeas(true)]); }
+    else { items.push(['測溫儀距管路約 5 cm 量測', doMeas(false)]); items.push(['測溫儀距管路約 50 cm 量測', doMeas(true)]); }
+  }
+  items.push(['戴手套觸摸，感覺溫度', () => { if (!S.ppe.h) { touchBare(T); return; } log(`量測點 ${n}：手感${T >= 50 ? '很燙' : T >= 35 ? '溫熱' : T <= 15 ? '冰冷' : '微溫'}（只能大概判斷）。`); }]);
+  items.push(['徒手觸摸，感覺溫度', () => touchBare(T)]);
+  menu(x, y, `量測點 ${n}${S.ir ? '' : '（還沒拿測溫儀）'}`, items);
+}
+function touchBare(T) { if (T >= 50) major('burn'); else { ded('touch'); log('徒手觸摸管路。', 'd'); } }
+
+/* ===== 紀錄表 ===== */
+function buildRec() {
+  $('#recCard').style.display = '';
+  ['gLP', 'gLT', 'gHP', 'gHT'].forEach(i => { $('#' + i).value = ''; $('#' + i).oninput = () => { S.lastAct = Date.now(); checkSteps(); renderSide(); }; });
+  $('#recRows').innerHTML = [1, 2, 3, 4, 5].map(n => `<tr><td><b>${n}</b></td><td><select data-r="${n}" data-f="side"><option value="">—</option><option value="H">高壓</option><option value="L">低壓</option></select></td>
+    <td><input data-r="${n}" data-f="temp" type="number" step="0.1"></td><td><select data-r="${n}" data-f="state"><option value="">—</option>${STATE.map((s, i) => `<option value="${i}">${s}</option>`).join('')}</select></td><td data-c="${n}"></td></tr>`).join('');
+  $('#recRows').querySelectorAll('select,input').forEach(e => { e.onchange = e.oninput = () => { S.lastAct = Date.now(); checkSteps(); renderSide(); }; });
+  $('#chkB').style.display = S.mode === 'guide' ? '' : 'none'; $('#chkMsg').textContent = '';
+}
+const recVal = (n, f) => { const e = $(`#recRows [data-r="${n}"][data-f="${f}"]`); return e ? e.value : ''; };
+const stateOf = (T, sat) => T - sat > 2 ? 0 : sat - T > 2 ? 1 : 2;
+function grade(apply) {   // apply=true 時記扣分；回傳每列對錯
+  const r = { gLP: Math.abs(+$('#gLP').value - S.PL) <= 30 && $('#gLP').value !== '', gHP: Math.abs(+$('#gHP').value - S.PH) <= 60 && $('#gHP').value !== '',
+    gLT: Math.abs(+$('#gLT').value - S.TE) <= 2 && $('#gLT').value !== '', gHT: Math.abs(+$('#gHT').value - S.TC) <= 2 && $('#gHT').value !== '', rows: {} };
+  if (apply) { if (!r.gLP) ded('gP', '低壓'); if (!r.gHP) ded('gP', '高壓'); if (!r.gLT) ded('gT', '低壓'); if (!r.gHT) ded('gT', '高壓'); }
+  S.order.forEach((id, i) => { const n = i + 1, P = PTS[S.sys][id], T = S.truth[id][0], sat = P.side === 'H' ? S.TC : S.TE;
+    const side = recVal(n, 'side') === P.side, temp = recVal(n, 'temp') !== '' && Math.abs(+recVal(n, 'temp') - T) <= 1.5, st = recVal(n, 'state') !== '' && +recVal(n, 'state') === stateOf(T, sat);
+    r.rows[n] = { side, temp, st };
+    if (apply) { if (!side) ded('rSide', '點 ' + n); if (recVal(n, 'temp') !== '' && S.meas[id] === undefined) ded('noMeas', '點 ' + n); else if (!temp) ded('rTemp', '點 ' + n); if (!st) ded('rState', '點 ' + n); } });
+  return r;
+}
+$('#chkB').onclick = () => { const r = grade(false), mark = ok => ok ? '<span class="ok">✔</span>' : '<span class="ng">✘</span>';
+  Object.entries(r.rows).forEach(([n, x]) => { $(`[data-c="${n}"]`).innerHTML = mark(x.side) + mark(x.temp) + mark(x.st); });
+  $('#chkMsg').innerHTML = `錶：低壓 ${mark(r.gLP)}${mark(r.gLT)}　高壓 ${mark(r.gHP)}${mark(r.gHT)}（✔ 依序＝側別、溫度、狀態）`; };
+
+/* ===== 進度 ===== */
+function checkSteps() {
+  const d = S.done, cs = compsOf();
+  if (S.ppe.g && S.ppe.h) d.add('ppe'); if (S.ir) d.add('ir');
+  if (cs.every(c => S.ans[c])) d.add('id');
+  if (S.flow.length >= 5) d.add('flow'); else d.delete('flow');
+  if (Object.keys(SEGS[S.sys]).every(k => S.segMark[k])) d.add('seg');
+  if (['gLP', 'gLT', 'gHP', 'gHT'].every(i => $('#' + i).value !== '')) d.add('gauge'); else d.delete('gauge');
+  if (S.order.every(id => S.meas[id] !== undefined)) d.add('meas');
+  if ([1, 2, 3, 4, 5].every(n => recVal(n, 'side') && recVal(n, 'temp') !== '' && recVal(n, 'state') !== '')) d.add('rec'); else d.delete('rec');
+}
+function finishCheck() {
+  const cs = compsOf();
+  cs.forEach(c => { const a = S.ans[c]; if (!a) ded('idMiss', COMP[c].n); else { if (a.n !== COMP[c].n) ded('idName', COMP[c].n); if (a.f !== COMP[c].f) ded('idFunc', COMP[c].n); } });
+  if (S.flow.join() !== FLOW[S.sys].join()) ded('flow');
+  Object.entries(SEGS[S.sys]).forEach(([k, v]) => { if (S.segMark[k] !== v.s) ded('seg', SEGNAME[k]); });
+  grade(true); S.done.add('fin'); finish();
+}
+function finish() {
+  S.end = true; clearInterval(timer); S.sec = (Date.now() - S.t0) / 1000;
+  const sc = S.major ? 0 : score(), hintOk = S.mode !== 'exam' || S.hints <= HINT_PASS, pass = !S.major && sc >= PASS && hintOk && S.mode === 'exam';
+  const items = Object.entries(S.ded).map(([k, v]) => { const [base, tag] = k.split('|'); return [DED[base][0] + (tag ? '（' + tag + '）' : ''), v, base]; });
+  const okMock = S.mode !== 'exam' && !S.major && !S.majors.length && sc >= PASS;
+  const verdict = S.major ? '不及格（重大缺失）' : sc < PASS ? '未達 80 分' : !hintOk ? `不及格（提示用了 ${S.hints} 次，上限 ${HINT_PASS} 次）` : S.mode === 'exam' ? '及格 ✔' : S.majors.length ? '有重大缺失，還要再練' : '練習達標 ✔';
+  const cats = Object.entries(CAT).map(([c, ks]) => { const its = items.filter(i => ks.includes(i[2])), sub = its.reduce((a, i) => a + i[1], 0);
+    return `<tr><td><b>${c}</b>${its.length ? '<br><span class="hint">' + its.map(i => esc(i[0])).join('、') + '</span>' : ''}</td><td>${sub ? '−' + sub : '✔'}</td></tr>`; }).join('');
+  const code = pass ? ('P0' + ((Date.now() / 1000 | 0) % 100000).toString(36).toUpperCase() + '-' + who.grp + who.op) : '';
+  const ans = `<details><summary>看正確答案（${S.sys === 'txv' ? '膨脹閥＋儲液器' : '毛細管＋蓄液器'}系統）</summary><div class="hint">
+    低壓 ${S.PL} kPa → ${S.TE.toFixed(1)}℃；高壓 ${S.PH} kPa → ${S.TC.toFixed(1)}℃<br>流向：${FLOW[S.sys].map(c => COMP[c].n).join(' → ')}<br>
+    ${S.order.map((id, i) => { const P = PTS[S.sys][id], T = S.truth[id][0]; return `點 ${i + 1} ${PTNAME[id]}：${P.side === 'H' ? '高壓' : '低壓'}、${T.toFixed(1)}℃、${STATE[stateOf(T, P.side === 'H' ? S.TC : S.TE)]}`; }).join('<br>')}</div></details>`;
+  $('#stepCard').innerHTML = `<h3>${S.mode === 'exam' ? '檢定結果' : MODE[S.mode] + ' 結果'}</h3><div class="result">
+    <div class="${pass || okMock ? 'pass' : 'fail'}">${verdict}</div>
+    <div>分數 <b>${sc}</b> / 100　用時 ${fmt(S.sec)}　提示 ${S.hints} 次</div>
+    <table><tr><td><b>安全</b>（重大缺失）</td><td>${S.major ? '✘ ' + esc(MAJOR[S.major]) : S.majors.length ? '✘ ' + S.majors.map(k => esc(MAJOR[k])).join('；') : '✔ 無'}</td></tr>${cats}</table>
+    ${S.mode !== 'exam' || !S.major ? ans : ''}
+    ${pass ? `<div class="cert">🎫 <b>P0 實車巡檢 通過</b><br>${esc(who.cls)} 第 ${esc(who.grp)} 組・操作者 ${esc(who.op)}<br>檢定碼 <b>${code}</b><br>${new Date().toLocaleString('zh-TW')}</div>` : ''}
+    <div class="row"><button class="pri" id="advB">🚀 進階挑戰：情境預測（選做）</button><button id="again">再做一次</button></div><div id="adv" class="adv"></div></div>`;
+  $('#again').onclick = () => location.reload(); $('#advB').onclick = advanced;
+  if (S.mode === 'exam' && window.Score) Score.submit({ lesson: 'AC-P0', title: `實車巡檢｜操作者${who.op}｜${pass ? '及格' : '不及格'}${S.major ? '（重大缺失）' : ''}｜提示${S.hints}次｜${S.sys === 'txv' ? '膨脹閥' : '毛細管'}`, cls: who.cls, grp: +who.grp,
+    score: sc, total: 100, pct: sc, sec: S.sec, detail: [{ round: '操作者' + who.op, got: sc, of: 100 }].concat(items.map(([a, b]) => ({ round: a.slice(0, 20), got: -b, of: 0 }))), at: new Date().toISOString() })
+    .then(r => { log(r.ok ? '成績已上傳。' : '成績未上傳（離線），請給老師看畫面。', r.ok ? 'g' : 'd'); render(); });
+  render();
+}
+/* ===== 進階：情境預測（選做，另計分） ===== */
+const ADV = [
+  { q: '冷氣運轉中，把 A/C 關掉（壓縮機停止）幾分鐘後，兩個錶會怎樣變化？', a: [-1, 1], to: () => [satP(S.amb), satP(S.amb)], ex: '壓縮機停了，高低壓兩側經膨脹閥慢慢平衡，最後都等於外氣溫度下的飽和壓力。' },
+  { q: '冷凝器風扇故障停止轉動（散熱不良），兩個錶會怎樣變化？', a: [1, 1], to: () => [S.PH * 1.35, S.PL * 1.15], ex: '熱放不掉，冷媒凝結溫度升高，高壓明顯上升，低壓也跟著偏高。' },
+  { q: '系統冷媒不足（有洩漏），兩個錶會怎樣變化？', a: [-1, -1], to: () => [S.PH * .7, S.PL * .55], ex: '冷媒量少，壓縮機壓不出足夠的高壓，蒸發器也被抽得很低，高低壓都偏低。' },
+];
+function advanced() {
+  $('#advB').disabled = true; let got = 0, done = 0;
+  const opt = [[1, 1], [1, -1], [-1, 1], [-1, -1]], lab = v => v > 0 ? '上升 ↑' : '下降 ↓';
+  $('#adv').innerHTML = `<p class="hint">每題選出「高壓錶、低壓錶」各怎麼變，兩個都對才算對。答完錶針會動給你看。不影響檢定成績。</p>` + ADV.map((q, i) => `<div class="q" id="aq${i}"><b>${i + 1}.</b> ${q.q}
+    <div class="opts">${opt.sort(() => Math.random() - .5).map(o => `<button data-q="${i}" data-o="${o}">高壓 ${lab(o[0])}／低壓 ${lab(o[1])}</button>`).join('')}</div><div class="hint" id="ae${i}"></div></div>`).join('') + '<div id="aSum"></div>';
+  $('#adv').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const i = +b.dataset.q, o = b.dataset.o.split(',').map(Number), q = ADV[i], ok = o[0] === q.a[0] && o[1] === q.a[1];
+    $('#aq' + i).querySelectorAll('button').forEach(x => x.disabled = true); b.style.outline = `3px solid ${ok ? '#3ad07a' : '#ff5d5d'}`;
+    if (ok) got++; done++;
+    $('#ae' + i).innerHTML = `${ok ? '<span class="ok">✔ 正確</span>' : `<span class="ng">✘ 正確是 高壓${lab(q.a[0])}／低壓${lab(q.a[1])}</span>`}　${q.ex}`;
+    const [h, l] = q.to(); S.anim = { from: [S.PH, S.PL], to: [h, l], t0: Date.now() }; animGauges();
+    if (done === ADV.length) { $('#aSum').innerHTML = `<b>進階挑戰：${got} / ${ADV.length}</b>`;
+      if (S.mode === 'exam' && window.Score) Score.submit({ lesson: 'AC-P0A', title: `進階情境預測｜操作者${who.op}`, cls: who.cls, grp: +who.grp, score: got, total: ADV.length, pct: Math.round(got / ADV.length * 100), sec: (Date.now() - S.t0) / 1000, detail: [], at: new Date().toISOString() }); } });
+}
+function animGauges() { const a = S.anim; if (!a) return; const k = Math.min(1, (Date.now() - a.t0) / 2500), e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+  S.gv = [a.from[0] + (a.to[0] - a.from[0]) * e, a.from[1] + (a.to[1] - a.from[1]) * e]; render(); if (k < 1) requestAnimationFrame(animGauges); else setTimeout(() => { S.gv = null; render(); }, 2500); }
+
+/* ===== 提示卡 ===== */
+$('#hintB').onclick = () => {
+  if (!S || S.end) return; const n = nextStep(); if (!n) return;
+  if (S.mode === 'exam') { if (S.hints >= HINT_MAX) return; S.hints++; S.ded['hint|第 ' + S.hints + ' 次'] = DED.hint[1]; log(`扣分 −5：使用提示卡（第 ${S.hints} 次）`, 'd'); } else S.hints++;
+  S.hintMsg = HINT[n[0]]; S.lastAct = Date.now(); S.nudged = false; log('💡 提示：' + HINT[n[0]]); render();
+};
+$('#flowB').onclick = () => { if (!S || S.end) return; S.lastAct = Date.now(); if (S.flowMode || S.flow.length) { S.flow = []; S.flowMode = true; log('重新標示冷媒流向：從壓縮機開始依序點元件。'); } else { S.flowMode = true; log('開始標示冷媒流向：從壓縮機開始依序點元件。'); } after(); };
+
+/* ===== 放大錶（低壓含真空；兩錶都有綠色 R-134a 飽和溫度圈） ===== */
+function bigGauge(sd, v) {
+  const cx = 500, cy = 310, r = 245, lo = sd === 'L', min = lo ? -101.3 : 0, max = lo ? 1500 : 3500, step = lo ? 20 : 50, lab = lo ? 100 : 500, col = lo ? '#38c6ff' : '#ff5d5d';
+  const A = x => (135 + 270 * (x - min) / (max - min)) * Math.PI / 180, P = (a, rr) => [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr];
+  let t = '';
+  for (let x = 0; x <= max; x += step) { const a = A(x), big = x % lab === 0, [x1, y1] = P(a, r - 6), [x2, y2] = P(a, r - (big ? 30 : 18));
+    t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e6ecf5" stroke-width="${big ? 3 : 1.5}"/>`;
+    if (big) { const [tx, ty] = P(a, r - 52); t += `<text x="${tx}" y="${ty + 6}" fill="#e6ecf5" font-size="18" text-anchor="middle">${x}</text>`; } }
+  if (lo) { for (let m = 0; m <= 760; m += 76) { const a = A(-m / 760 * 101.3), [x1, y1] = P(a, r - 6), [x2, y2] = P(a, r - 20); t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ff8a8a" stroke-width="2"/>`; } }
+  let last = -9; const T0 = lo ? -10 : 20, T1 = lo ? 55 : 70, dT = lo ? 5 : 5;
+  for (let T = T0; T <= T1; T += dT) { const gp = satP(T); if (gp < 0 || gp > max) continue; const a = A(gp), [x1, y1] = P(a, r - 84), [x2, y2] = P(a, r - 98);
+    t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3ad07a" stroke-width="2"/>`;
+    if (a - last > .13) { last = a; const [tx, ty] = P(a, r - 116); t += `<text x="${tx}" y="${ty + 5}" fill="#3ad07a" font-size="15" text-anchor="middle">${T}</text>`; } }
+  // 細刻度：每 1℃
+  for (let T = T0; T <= T1; T++) { const gp = satP(T); if (gp < 0 || gp > max) continue; const a = A(gp), [x1, y1] = P(a, r - 84), [x2, y2] = P(a, r - 90); t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3ad07a" stroke-width="1"/>`; }
+  const a = A(v), [nx, ny] = P(a, r - 40);
+  return `<g data-o="zoomX" style="cursor:zoom-out"><rect width="1000" height="620" fill="#000c"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#0d1526" stroke="${col}" stroke-width="8"/>${t}
+    <text x="${cx}" y="${cy + 80}" fill="#e6ecf5" font-size="18" text-anchor="middle">kPa</text><text x="${cx}" y="${cy + 112}" fill="#3ad07a" font-size="15" text-anchor="middle">綠：R-134a 飽和溫度 ℃（細刻度每 1℃）</text>
+    <text x="${cx}" y="${cy - 80}" fill="${col}" font-size="24" font-weight="800" text-anchor="middle">${lo ? '低壓錶' : '高壓錶'}</text>
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="10" fill="#ffb020"/>
+    <text x="${cx}" y="604" fill="#ffb020" font-size="16" text-anchor="middle">點任意處關閉</text></g>`;
+}
+
+/* ===== 畫面 ===== */
+const poly = pts => pts.map(p => p.join(',')).join(' ');
+function render() {
+  if (!S) return;
+  const sys = S.sys, segs = SEGS[sys], pts = PTS[sys], gv = S.gv || [S.PH, S.PL];
+  const mark = k => S.segMark[k] === 'H' ? '#d24a4a' : S.segMark[k] === 'L' ? '#3a7fd0' : '#8a98ad';
+  const lbl = c => { const a = S.ans[c], fi = S.flow.indexOf(c); return (a ? a.n : '') + (fi >= 0 ? `　#${fi + 1}` : ''); };
+  const comp = (c, x, y, w, h, body) => `<g data-o="c:${c}" style="cursor:pointer">${body}<rect x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${h + 12}" fill="transparent" stroke="${S.flowMode ? '#ffd23f' : 'transparent'}" stroke-dasharray="6 4" stroke-width="2" rx="8"/>
+    ${lbl(c) ? `<rect x="${x + w / 2 - 70}" y="${y + h + 8}" width="140" height="24" rx="6" fill="#1b2840" stroke="#ffd23f"/><text x="${x + w / 2}" y="${y + h + 25}" fill="#ffd23f" font-size="13" font-weight="700" text-anchor="middle">${esc(lbl(c))}</text>` : ''}</g>`;
+  let svg = `<rect width="1000" height="620" fill="#0d1526"/>
+  <!-- 車體 -->
+  <rect x="30" y="30" width="650" height="425" rx="18" fill="#101a2c" stroke="#2a3a5c"/><text x="40" y="24" fill="#9fb0cf" font-size="13">▲ 車頭（引擎室，俯視）</text>
+  <rect x="30" y="462" width="950" height="150" rx="14" fill="#141d30" stroke="#2a3a5c"/><text x="40" y="606" fill="#9fb0cf" font-size="13">車內儀錶板（掀開）</text>
+  <line x1="30" y1="458" x2="980" y2="458" stroke="#4a5d7d" stroke-width="4" stroke-dasharray="10 6"/><text x="380" y="452" fill="#4a5d7d" font-size="12">防火牆</text>
+  <!-- 非冷媒元件（干擾） -->
+  <g data-o="d:rad" style="cursor:pointer"><rect x="90" y="114" width="470" height="26" rx="4" fill="#2a3448" stroke="#4a5d7d"/></g>
+  <g data-o="d:fan" style="cursor:pointer">${[250, 410].map(x => `<g transform="translate(${x},176)"><circle r="28" fill="#16223a" stroke="#4a5d7d" stroke-width="2"/><g ${x === 250 ? 'id="fanRot"' : ''}>${[0, 90, 180, 270].map(a => `<ellipse rx="20" ry="6" transform="rotate(${a})" fill="#5c6f8a"/>`).join('')}</g></g>`).join('')}<text x="330" y="214" fill="#9fb0cf" font-size="12" text-anchor="middle">電動風扇（運轉中）</text></g>
+  <g data-o="d:eng" style="cursor:pointer"><rect x="190" y="230" width="330" height="165" rx="14" fill="#232f45" stroke="#4a5d7d"/><text x="355" y="318" fill="#9fb0cf" font-size="20" text-anchor="middle">引擎</text><circle cx="335" cy="380" r="22" fill="#16223a" stroke="#8ea3bf" stroke-width="3"/></g>
+  <line x1="95" y1="323" x2="320" y2="362" stroke="#5c6f8a" stroke-width="6"/><line x1="95" y1="367" x2="330" y2="402" stroke="#5c6f8a" stroke-width="6"/><text x="200" y="400" fill="#9fb0cf" font-size="12">皮帶（運轉中）</text>
+  <g data-o="d:blw" style="cursor:pointer"><circle cx="672" cy="518" r="24" fill="#16223a" stroke="#4a5d7d" stroke-width="2"/><text x="672" y="558" fill="#9fb0cf" font-size="12" text-anchor="middle">鼓風機</text></g>`;
+  // 管路（點擊標示高低壓）
+  Object.entries(segs).forEach(([k, s]) => { svg += `<polyline points="${poly(s.p)}" fill="none" stroke="${mark(k)}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline data-o="s:${k}" points="${poly(s.p)}" fill="none" stroke="transparent" stroke-width="26" style="cursor:pointer"/>`; });
+  // 元件
+  svg += comp('comp', 50, 255, 90, 70, `<rect x="50" y="255" width="90" height="70" rx="10" fill="#2a3b5e" stroke="#8ea3bf" stroke-width="2"/><circle cx="95" cy="345" r="22" fill="#16223a" stroke="#8ea3bf" stroke-width="3"/>`);
+  svg += comp('cond', 90, 55, 470, 52, `<rect x="90" y="55" width="470" height="52" rx="6" fill="#1e2b44" stroke="#8ea3bf" stroke-width="2"/>${Array.from({ length: 46 }, (_, i) => `<line x1="${98 + i * 10}" y1="60" x2="${98 + i * 10}" y2="102" stroke="#3a4a66"/>`).join('')}<polyline points="95,72 555,72 555,90 95,90" fill="none" stroke="#8a98ad" stroke-width="5"/>`);
+  if (sys === 'txv') { svg += comp('rec', 590, 70, 34, 80, `<rect x="590" y="70" width="34" height="80" rx="10" fill="#1b2840" stroke="#8ea3bf" stroke-width="2"/>`);
+    svg += comp('txv', 591, 432, 32, 30, `<rect x="591" y="432" width="32" height="30" rx="5" fill="#5d7396" stroke="#8ea3bf" stroke-width="2"/>`); }
+  else { svg += comp('ori', 597, 404, 20, 36, `<rect x="597" y="404" width="20" height="36" rx="4" fill="#e0a040" stroke="#8ea3bf" stroke-width="2"/>`);
+    svg += comp('acc', 340, 398, 60, 54, `<rect x="340" y="398" width="60" height="54" rx="12" fill="#1b2840" stroke="#8ea3bf" stroke-width="2"/>`); }
+  svg += comp('evap', 440, 486, 200, 64, `<rect x="440" y="486" width="200" height="64" rx="6" fill="#1e2b44" stroke="#8ea3bf" stroke-width="2"/>${Array.from({ length: 19 }, (_, i) => `<line x1="${448 + i * 10}" y1="490" x2="${448 + i * 10}" y2="546" stroke="#3a4a66"/>`).join('')}<polyline points="607,500 450,500 450,518 630,518 630,536 440,536" fill="none" stroke="#8a98ad" stroke-width="5"/>`);
+  // 檢修接口與檢修錶
+  const hp = [607, 230];
+  svg += `<circle cx="${hp[0]}" cy="${hp[1]}" r="9" fill="#ff5d5d"/><text x="${hp[0] + 14}" y="${hp[1] + 5}" fill="#ff7070" font-size="12">H 接口</text><circle cx="210" cy="425" r="9" fill="#38c6ff"/><text x="198" y="447" fill="#38c6ff" font-size="12">L 接口</text>
+    <path d="M${hp[0]} ${hp[1]} C 660 230, 820 240, 900 205" fill="none" stroke="#e04848" stroke-width="3" stroke-dasharray="8 6"/><path d="M210 425 C 190 470, 660 470, 690 380 S 760 240, 780 205" fill="none" stroke="#2f8fe0" stroke-width="3" stroke-dasharray="8 6"/>
+    <rect x="700" y="30" width="285" height="180" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="712" y="50" fill="#9fb0cf" font-size="13">檢修錶（老師已接好）🔍 點錶面放大</text>`;
+  const mg = (cx, v, max, col, id, nm) => { const ang = (135 + 270 * Math.min(1, Math.max(0, v / max))) * Math.PI / 180;
+    return `<g data-o="${id}" style="cursor:zoom-in"><circle cx="${cx}" cy="128" r="58" fill="#0d1526" stroke="${col}" stroke-width="5"/>${Array.from({ length: 11 }, (_, i) => { const b = (135 + 27 * i) * Math.PI / 180; return `<line x1="${cx + Math.cos(b) * 50}" y1="${128 + Math.sin(b) * 50}" x2="${cx + Math.cos(b) * 42}" y2="${128 + Math.sin(b) * 42}" stroke="#c9d3e0" stroke-width="2"/>`; }).join('')}
+      <line x1="${cx}" y1="128" x2="${cx + Math.cos(ang) * 44}" y2="${128 + Math.sin(ang) * 44}" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="${cx}" cy="128" r="5" fill="#ffb020"/><text x="${cx}" y="160" fill="${col}" font-size="13" font-weight="700" text-anchor="middle">${nm}</text></g>`; };
+  svg += mg(780, gv[1], 1500, '#38c6ff', 'gL', '低壓') + mg(910, gv[0], 3500, '#ff5d5d', 'gH', '高壓');
+  // 工具架
+  svg += `<rect x="700" y="222" width="285" height="96" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="712" y="242" fill="#9fb0cf" font-size="13">工具架</text>
+    <g data-o="gog" style="cursor:pointer;opacity:${S.ppe.g ? .3 : 1}"><text x="750" y="290" font-size="34" text-anchor="middle">🥽</text><text x="750" y="308" fill="#e6ecf5" font-size="12" text-anchor="middle">護目鏡</text></g>
+    <g data-o="glv" style="cursor:pointer;opacity:${S.ppe.h ? .3 : 1}"><text x="842" y="290" font-size="34" text-anchor="middle">🧤</text><text x="842" y="308" fill="#e6ecf5" font-size="12" text-anchor="middle">手套</text></g>
+    <g data-o="irT" style="cursor:pointer"><rect x="905" y="258" width="64" height="40" rx="8" fill="${S.ir ? '#ffd23f' : '#2a3448'}" stroke="#ffb020" stroke-width="2"/><text x="937" y="284" font-size="13" font-weight="700" text-anchor="middle" fill="${S.ir ? '#1a1200' : '#fff'}">🌡 測溫</text><text x="937" y="312" fill="#e6ecf5" font-size="11" text-anchor="middle">${S.ir ? '手上' : '紅外線測溫儀'}</text></g>`;
+  // 量測點
+  S.order.forEach((id, i) => { const P = pts[id], m = S.meas[id];
+    svg += `<g data-o="p:${id}" style="cursor:pointer"><circle cx="${P.x}" cy="${P.y}" r="15" fill="${m !== undefined ? '#2f6b4a' : '#ffb020'}" stroke="#1a1200" stroke-width="2"/><text x="${P.x}" y="${P.y + 6}" font-size="16" font-weight="800" text-anchor="middle" fill="${m !== undefined ? '#fff' : '#1a1200'}">${i + 1}</text>
+      ${m !== undefined ? `<rect x="${P.x + 16}" y="${P.y - 30}" width="66" height="22" rx="5" fill="#0b1424" stroke="#ffd23f"/><text x="${P.x + 49}" y="${P.y - 14}" fill="#ffd23f" font-size="13" font-weight="700" text-anchor="middle">${m.toFixed(1)}℃</text>` : ''}</g>`; });
+  svg += `<g data-o="done" style="cursor:pointer"><rect x="820" y="520" width="150" height="50" rx="10" fill="#ffb020"/><text x="895" y="551" fill="#1a1200" font-size="17" font-weight="800" text-anchor="middle">完成作業 ✔</text></g>`;
+  if (S.flowMode) svg += `<rect x="190" y="160" width="330" height="34" rx="8" fill="#ffd23f"/><text x="355" y="183" fill="#1a1200" font-size="15" font-weight="800" text-anchor="middle">標示流向中：從壓縮機起依序點元件（${S.flow.length}/5）</text>`;
+  if (S.zoom) svg += bigGauge(S.zoom, S.zoom === 'L' ? gv[1] : gv[0]);
+  $('#sv').innerHTML = svg; renderSide();
+}
+function renderSide() {
+  $('#sMode').textContent = MODE[S.mode]; $('#sScore').textContent = S.major ? 0 : score();
+  const hb = $('#hintB'); hb.style.display = S.mode === 'guide' || S.end ? 'none' : ''; hb.disabled = S.mode === 'exam' && S.hints >= HINT_MAX; hb.textContent = S.mode === 'exam' ? `💡 提示（−5 分，剩 ${HINT_MAX - S.hints} 次）` : '💡 提示（練習不扣分）';
+  const fb = $('#flowB'); fb.style.display = S.end ? 'none' : ''; fb.className = S.flowMode ? 'on' : ''; fb.textContent = S.flowMode ? `🔁 標示流向中（${S.flow.length}/5）` : S.flow.length ? '🔁 重新標示冷媒流向' : '🔁 標示冷媒流向';
+  $('#sPpe').innerHTML = `🥽 ${S.ppe.g ? '✔' : '✘'}　🧤 ${S.ppe.h ? '✔' : '✘'}　🌡 ${S.ir ? '手上' : '未拿'}　外氣 ${S.amb}℃`;
+  if (!S.end) {
+    if (S.mode === 'guide') { const nowI = STEPS.findIndex(([k]) => !S.done.has(k)); $('#stepTitle').textContent = '作業程序（導引）';
+      $('#steps').innerHTML = STEPS.map(([k, s], i) => `<li class="${S.done.has(k) ? 'done' : i === nowI ? 'now' : ''}">${esc(s)}${i === nowI ? `<div class="why">💬 ${esc(WHY[k])}</div>` : ''}</li>`).join(''); }
+    else { const w = curWork(); $('#stepTitle').textContent = '📋 工作單';
+      $('#steps').innerHTML = WORK.map((x, i) => `<li class="wk ${x.k.every(k => S.done.has(k)) ? 'done' : i === w ? 'now' : ''}"><b>${esc(x.t)}</b>${x.k.every(k => S.done.has(k)) ? ' ✔' : ''}<br><span class="hint">${esc(x.d)}</span></li>`).join(''); }
+  }
+  $('#hintMsg').innerHTML = S.hintMsg && !S.end ? '💡 ' + esc(S.hintMsg) : '';
+  $('#log').innerHTML = S.log.join('');
+}
+$('#sv').addEventListener('click', e => { const t = e.target.closest('[data-o]'), b = $('#sv').getBoundingClientRect(), x = (e.clientX - b.left) * 1000 / b.width, y = (e.clientY - b.top) * 1000 / b.width;
+  $('#menu').style.display = 'none'; if (t) act(t.dataset.o, x, y); });
+
+/* ===== 開始畫面 ===== */
+function setup() {
+  const CLS = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車三甲'];
+  $('#setup').innerHTML = `<h3>開始</h3>
+    <div class="row">班級 <select id="cS">${CLS.map(c => `<option ${c === who.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+      組別 <input id="gS" type="number" min="1" max="30" value="${esc(who.grp || 1)}" style="width:64px">
+      操作者 <select id="oS">${[1, 2, 3].map(n => `<option ${String(n) === who.op ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="hint">每位同學各自完成。不輸入姓名。系統隨機出「膨脹閥＋儲液器」或「毛細管＋蓄液器」車型，外氣 25～35℃。</div>
+    <div class="row"><button id="bG">🧭 練習 1：導引</button><button id="bP">📋 練習 2：工作單</button><button class="pri" id="bE">🎫 檢定（15 分鐘）</button></div>
+    <div class="hint">練習 1：每一步有提示和理由，紀錄表可隨時檢查。練習 2：只有工作單，重大缺失不中止。<br>檢定：只有工作單；💡 提示卡每次 −5 分、最多 3 次（超過 2 次不及格）；重大缺失立即不及格；80 分以上及格。完成後可選做「進階情境預測」。</div>`;
+  const go = mode => { who.cls = $('#cS').value; who.grp = String(Math.min(30, Math.max(1, Math.round(+$('#gS').value || 1)))); who.op = $('#oS').value;
+    store.set('act_cls', who.cls); store.set('act_grp', who.grp); store.set('p1_op', who.op);
+    $('#setup').innerHTML = `<h3>${esc(who.cls)} 第 ${esc(who.grp)} 組・操作者 ${esc(who.op)}</h3><div class="hint">點畫面上的元件、管路、黃色量測點、檢修錶、工具選擇動作。</div><div class="row"><button id="bR">↺ 重新開始</button></div>`;
+    $('#bR').onclick = () => location.reload(); fresh(mode); };
+  $('#bG').onclick = () => go('guide'); $('#bP').onclick = () => go('mock'); $('#bE').onclick = () => go('exam');
+}
+setup();
+$('#sv').innerHTML = '<rect width="1000" height="620" fill="#0d1526"/><text x="500" y="280" fill="#e6ecf5" font-size="30" font-weight="700" text-anchor="middle">P0 冷媒循環 實車巡檢</text><text x="500" y="330" fill="#9fb0cf" font-size="18" text-anchor="middle">先在右側選擇班級、組別、操作者，再選練習或檢定</text>';
+$('#steps').innerHTML = WORK.map(x => `<li class="wk"><b>${esc(x.t)}</b><br><span class="hint">${esc(x.d)}</span></li>`).join('');
+window.__S = () => S; window.__fresh = fresh; window.__act = act;
+</script></body></html>
