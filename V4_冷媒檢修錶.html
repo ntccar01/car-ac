@@ -103,6 +103,10 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:18px!important;font-weight:900!important;padding:10px 18px!important;animation:finpulse 1.2s infinite}
 @keyframes finpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,208,122,.7)}50%{box-shadow:0 0 0 10px rgba(58,208,122,0)}}
 .finneed{margin-top:8px;padding:8px 12px;border-radius:10px;background:#3a2a00;border:1px solid #ffb020;color:#ffe2a0;font-size:15px;line-height:1.6}
+
+/* 小問題：選項下方的對照提示（2026-11-13） */
+.qtip{clear:both;margin-top:10px;padding:10px 14px;border-radius:10px;background:#122a3a;border:1px dashed #38c6ff;color:#d6ecff;font-size:16px;line-height:1.8}
+.qtip .qth{font-weight:800;color:#7cd8ff;margin-bottom:2px}.qtip .tx{color:#9fb0cf;font-size:14px}
 .act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
 .acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
 .acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
@@ -151,6 +155,9 @@ button.finready{background:#3ad07a!important;color:#04220f!important;border-colo
 .qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
 
 .qref canvas.wide{width:320px;height:auto;border-radius:10px;border:1px solid #2a3a5c}.rref canvas.wide{width:min(560px,100%)}
+
+.qtip{margin-top:10px;padding:10px 14px;border-radius:10px;background:#122a3a;border:1px dashed #38c6ff;color:#d6ecff;font-size:16px;line-height:1.8;text-align:left}
+.qtip .qth{font-weight:800;color:#7cd8ff;margin-bottom:2px}.qtip .tx{color:#9fb0cf;font-size:14px}
 </style></head><body>
 <script src="firebase-config.js"></script><script src="score.js"></script>
 <script>
@@ -320,7 +327,7 @@ function Player(cfg) {
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div><div class="readytip" id="rtip"><div class="rt1">🎉 這一段的任務完成了！</div><div class="rt2"><button class="rgo" onclick="finishLoop()">前往下一段 ▶</button><button class="rstay" id="rstay">再看看</button></div></div>
-      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="qtip" id="qt"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
@@ -378,6 +385,7 @@ function Player(cfg) {
     if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
     const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
     $('#qq').textContent = q.q; $('#qe').textContent = ''; const qr = $('#qr'); qr.innerHTML = ''; qr.style.display = q.ref ? '' : 'none'; $('#quiz .card').classList.remove('wideref'); $('#quiz .card').classList.toggle('withref', !!q.ref); if (q.ref) { if (typeof q.ref === 'function') q.ref(qr); else qr.innerHTML = q.ref; } $('#qgo').style.display = 'none';
+    const qt = $('#qt'); qt.innerHTML = q.tip ? '<div class="qth">💡 對照提示</div>' + q.tip : ''; qt.style.display = q.tip ? '' : 'none';
     $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
     $('#qo').onclick = e => {
       const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
@@ -626,8 +634,8 @@ function Activity(root, cfg) {
     frame(r, `<div class="aq"></div>`);
     const chk = body.querySelector('#achk'); chk.style.display = 'none';
     function q() {
-      const [qq, opts, ex, ref] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
-      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${ref ? '<div class="qref"></div>' : ''}${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      const [qq, opts, ex, ref, tip] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
+      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${ref ? '<div class="qref"></div>' : ''}${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}${tip ? `<div class="qtip"><div class="qth">💡 對照提示</div>${tip}</div>` : ''}<p class="aex"></p>`;
       if (ref) { const el = body.querySelector('.qref'); if (typeof ref === 'function') ref(el); else el.innerHTML = ref; }
       body.querySelector('.aq').onclick = e => {
         const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const x = o[+b.dataset.k];
@@ -868,6 +876,8 @@ function refGauge(el, note, v = null) {
 
 /* 車輛空調檢修實習 V4 冷媒檢修錶（第 2 次課）— 需先載入 common.js
    課本 2-2（p23–36）：單位換算、飽和、過熱過冷、檢修錶構造、四種閥位、錶面判讀、專用錶組、連接與拆卸、冷凍油 */
+// 過熱／過冷計算的對照提示（老師 11-13：讓學生對照，不是考倒）
+const SHTIP = '<b>過熱度</b>（低壓側）＝ 管路實測溫度 － 飽和溫度　<span class="tx">例：5 － 2 ＝ 3℃</span><br><b>過冷度</b>（高壓側）＝ 飽和溫度 － 管路實測溫度　<span class="tx">例：60 － 55 ＝ 5℃</span>';
 /* 課本表 2-1：R-134a 飽和壓力（錶壓）—溫度 */
 const T21 = [[-8, 115.7], [-6, 133.0], [-4, 151.4], [-2, 170.9], [0, 191.5], [2, 213.3], [4, 236.3], [6, 260.6], [8, 286.3], [10, 313.2], [12, 341.6], [14, 371.5], [16, 402.8], [18, 435.8], [20, 470.3], [25, 563.9], [30, 668.7], [40, 916.6], [50, 1217.9], [60, 1580.7], [70, 2015.7]];
 const LMAX = 1500, HMAX = 3500, VAC = -101.3;   // 低壓錶 −760 mmHg～1500 kPa；高壓錶 0～3500 kPa
@@ -1128,7 +1138,7 @@ const V4 = {
         bar(40, '過熱（低壓側）', 2, 5, '#38c6ff', 1, 0); bar(520, '過冷（高壓側）', 60, 55, '#ff7070', -1, 13);
         if (t >= 26) { H.box(ctx, 120, 420, 720, 90, { stroke: C.acc }); H.text(ctx, '過熱 → 壓縮機吸到的是氣體（防液擠）\n過冷 → 膨脹閥前是液體（吸熱更充分）', 480, 445, { size: 19, bold: true, align: 'center', color: C.acc }); }
       },
-      quiz: { q: '低壓錶換算的飽和溫度是 3℃，蒸發器出口管實測 9℃，過熱度是多少？', opts: ['6℃', '12℃', '3℃', '9℃'], ans: 0, ex: '過熱度＝實測溫度－飽和溫度＝9－3＝6℃。' } },
+      quiz: { q: '低壓錶換算的飽和溫度是 3℃，蒸發器出口管實測 9℃，過熱度是多少？', opts: ['6℃', '12℃', '3℃', '9℃'], ans: 0, tip: SHTIP, ex: '過熱度＝實測溫度－飽和溫度＝9－3＝6℃。' } },
 
     { title: '專用錶組與 H／L 接口', dur: 36,
       captions: [[0, '不同冷媒要用<b>專用檢修錶組</b>。R-134a 的軟管是<b>藍、紅、黃帶黑色條紋</b>，用<b>快速接頭</b>；舊式 R-12 用<b>螺紋接口</b>。', '不同冷媒要用專用檢修錶組。R 134 a 的軟管是藍、紅、黃帶黑色條紋，用快速接頭；舊式 R 12 用螺紋接口。'],
@@ -1227,7 +1237,7 @@ const V4 = {
         ['低壓錶指在 2 bar，等於多少 kPa？', ['200 kPa', '20 kPa', '2000 kPa', '0.2 kPa'], '1 bar＝100 kPa。'],
         ['1 kg/cm² 約等於多少 kPa？', ['98 kPa', '14.22 kPa', '760 kPa', '1000 kPa'], '1 kg/cm²≒0.98 bar≒98 kPa（≒14.22 psi）。'],
         ['R-134a 在 0℃ 的飽和壓力約為？（對照錶面）', ['191.5 kPa', '563.9 kPa', '101.3 kPa', '0 kPa'], '綠色 0 對到約 190 kPa；0℃ ↔ 191.5 kPa。', el => refGauge(el)],
-        ['低壓飽和溫度 4℃，蒸發器出口管實測 10℃，過熱度為？', ['6℃', '14℃', '4℃', '10℃'], '過熱度＝10－4＝6℃。'],
+        ['低壓飽和溫度 4℃，蒸發器出口管實測 10℃，過熱度為？', ['6℃', '14℃', '4℃', '10℃'], '過熱度＝10－4＝6℃。', null, SHTIP],
         ['劣化的冷凍油外觀通常是？', ['棕色混濁', '無色透明', '藍色', '綠色螢光'], '新油無色透明，劣化後棕色混濁。']] },
     ],
   },

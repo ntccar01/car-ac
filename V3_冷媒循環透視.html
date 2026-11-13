@@ -103,6 +103,10 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:18px!important;font-weight:900!important;padding:10px 18px!important;animation:finpulse 1.2s infinite}
 @keyframes finpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,208,122,.7)}50%{box-shadow:0 0 0 10px rgba(58,208,122,0)}}
 .finneed{margin-top:8px;padding:8px 12px;border-radius:10px;background:#3a2a00;border:1px solid #ffb020;color:#ffe2a0;font-size:15px;line-height:1.6}
+
+/* 小問題：選項下方的對照提示（2026-11-13） */
+.qtip{clear:both;margin-top:10px;padding:10px 14px;border-radius:10px;background:#122a3a;border:1px dashed #38c6ff;color:#d6ecff;font-size:16px;line-height:1.8}
+.qtip .qth{font-weight:800;color:#7cd8ff;margin-bottom:2px}.qtip .tx{color:#9fb0cf;font-size:14px}
 .act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
 .acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
 .acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
@@ -151,6 +155,9 @@ button.finready{background:#3ad07a!important;color:#04220f!important;border-colo
 .qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
 
 .qref canvas.wide{width:320px;height:auto;border-radius:10px;border:1px solid #2a3a5c}.rref canvas.wide{width:min(560px,100%)}
+
+.qtip{margin-top:10px;padding:10px 14px;border-radius:10px;background:#122a3a;border:1px dashed #38c6ff;color:#d6ecff;font-size:16px;line-height:1.8;text-align:left}
+.qtip .qth{font-weight:800;color:#7cd8ff;margin-bottom:2px}.qtip .tx{color:#9fb0cf;font-size:14px}
 </style></head><body>
 <script src="firebase-config.js"></script><script src="score.js"></script>
 <script>
@@ -320,7 +327,7 @@ function Player(cfg) {
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div><div class="readytip" id="rtip"><div class="rt1">🎉 這一段的任務完成了！</div><div class="rt2"><button class="rgo" onclick="finishLoop()">前往下一段 ▶</button><button class="rstay" id="rstay">再看看</button></div></div>
-      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="qtip" id="qt"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
@@ -378,6 +385,7 @@ function Player(cfg) {
     if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
     const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
     $('#qq').textContent = q.q; $('#qe').textContent = ''; const qr = $('#qr'); qr.innerHTML = ''; qr.style.display = q.ref ? '' : 'none'; $('#quiz .card').classList.remove('wideref'); $('#quiz .card').classList.toggle('withref', !!q.ref); if (q.ref) { if (typeof q.ref === 'function') q.ref(qr); else qr.innerHTML = q.ref; } $('#qgo').style.display = 'none';
+    const qt = $('#qt'); qt.innerHTML = q.tip ? '<div class="qth">💡 對照提示</div>' + q.tip : ''; qt.style.display = q.tip ? '' : 'none';
     $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
     $('#qo').onclick = e => {
       const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
@@ -626,8 +634,8 @@ function Activity(root, cfg) {
     frame(r, `<div class="aq"></div>`);
     const chk = body.querySelector('#achk'); chk.style.display = 'none';
     function q() {
-      const [qq, opts, ex, ref] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
-      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${ref ? '<div class="qref"></div>' : ''}${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      const [qq, opts, ex, ref, tip] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
+      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${ref ? '<div class="qref"></div>' : ''}${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}${tip ? `<div class="qtip"><div class="qth">💡 對照提示</div>${tip}</div>` : ''}<p class="aex"></p>`;
       if (ref) { const el = body.querySelector('.qref'); if (typeof ref === 'function') ref(el); else el.innerHTML = ref; }
       body.querySelector('.aq').onclick = e => {
         const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const x = o[+b.dataset.k];
