@@ -91,6 +91,18 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .quiz .card.withref.wideref #qo{display:grid;grid-template-columns:1fr 1fr;gap:6px}.quiz .card.withref.wideref #qo .opt{margin:0}
 @media(max-width:600px){.quiz .card.withref.wideref #qo{grid-template-columns:1fr}}
 .quiz{position:fixed;z-index:60}
+
+/* 互動章節完成提示（2026-11-13） */
+.stage{position:relative}
+.readytip{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;transition:.35s;background:rgba(14,40,26,.96);border:3px solid #3ad07a;border-radius:16px;padding:12px 18px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:20;max-width:92%}
+.readytip.show{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+.readytip .rt1{font-size:20px;font-weight:800;color:#bff5d3;margin-bottom:8px}
+.readytip .rt2{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.readytip .rgo{background:#3ad07a;color:#04220f;border:0;border-radius:12px;font-size:20px;font-weight:900;padding:10px 22px;cursor:pointer;animation:finpulse 1.2s infinite}
+.readytip .rstay{background:transparent;color:#bff5d3;border:1px solid #3ad07a;border-radius:12px;font-size:15px;padding:8px 14px;cursor:pointer}
+button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:18px!important;font-weight:900!important;padding:10px 18px!important;animation:finpulse 1.2s infinite}
+@keyframes finpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,208,122,.7)}50%{box-shadow:0 0 0 10px rgba(58,208,122,0)}}
+.finneed{margin-top:8px;padding:8px 12px;border-radius:10px;background:#3a2a00;border:1px solid #ffb020;color:#ffe2a0;font-size:15px;line-height:1.6}
 .act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
 .acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
 .acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
@@ -307,7 +319,7 @@ function Player(cfg) {
   document.body.innerHTML = `<div class="wrap">
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
-    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
+    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div><div class="readytip" id="rtip"><div class="rt1">🎉 這一段的任務完成了！</div><div class="rt2"><button class="rgo" onclick="finishLoop()">前往下一段 ▶</button><button class="rstay" id="rstay">再看看</button></div></div>
       <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
@@ -353,7 +365,7 @@ function Player(cfg) {
   });
   function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
   function go(i, keepPlay) {
-    ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
+    ci = i; t = 0; lastCap = ''; ended = false; lastReady = null; skipWarn = false; $('#rtip').classList.remove('show'); $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
     stopTTS();
     const p = $('#panel'); p.innerHTML = ''; p.style.display = ''; if (chs[i].panel) chs[i].panel(p, S); document.body.classList.toggle('haspanel', !!chs[i].panel);
     if (chs[i].enter) chs[i].enter(S);
@@ -417,13 +429,29 @@ function Player(cfg) {
     if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) { try { speak(cap, say); } catch (e) { speaking = false; } } }
     ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
     try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
+    if (c.loop && c.ready) { const r = !!c.ready(S); if (r !== lastReady) { lastReady = r; markReady(r); } }
     const d = durOf(c), shown = c.loop ? (t % d) : t;
     $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
     [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
     requestAnimationFrame(frame);
   }
   // 互動章節：「完成本段」按鈕
-  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
+  let lastReady = null, skipWarn = false;
+  const finBtns = () => [...$('#panel').querySelectorAll('button[onclick^="finishLoop"]')];
+  // 達成條件時：按鈕變大變綠＋閃動、畫面上跳出「前往下一段」、捲動讓按鈕看得到
+  function markReady(r) {
+    finBtns().forEach(b => { b.classList.toggle('finready', r); b.textContent = r ? '✔ 完成本段，前往下一段 ▶' : '完成本段 ✔'; });
+    const n = $('#finNeed'); if (n) n.remove();
+    if (r) { $('#rtip').classList.add('show'); const b = finBtns()[0]; if (b) setTimeout(() => b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300); }
+    else $('#rtip').classList.remove('show');
+  }
+  $('#rstay').onclick = e => { e.stopPropagation(); $('#rtip').classList.remove('show'); };
+  window.finishLoop = () => { const c = chs[ci];
+    if (c.ready && !c.ready(S) && !skipWarn) { skipWarn = true; const b = finBtns()[0];
+      if (b && !$('#finNeed')) { const d = document.createElement('div'); d.id = 'finNeed'; d.className = 'finneed'; b.closest('.row').after(d); }
+      const d = $('#finNeed'); if (d) d.innerHTML = `⚠️ 這一段還沒完成：${c.need ? c.need(S) : '請依上方說明操作'}。<br>做完後按鈕會變成綠色；若要直接跳過，再按一次「完成本段」。`; return; }
+    $('#rtip').classList.remove('show');
+    if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
   window.__seek = (i, tt) => { go(i, false); t = tt; };
   if (cfg.activity) {
     const wrap = document.createElement('section'); wrap.id = 'actwrap'; document.querySelector('.wrap').append(wrap);
@@ -957,6 +985,7 @@ const V3 = {
       quiz: { q: '為什麼冷媒在蒸發器內能從 25℃ 的車內空氣吸熱？', opts: ['低壓下冷媒沸點很低，比空氣冷', '蒸發器裡有加冰塊', '冷媒在蒸發器被加壓變冷', '鼓風機把熱吹走了'], ans: 0, ex: '膨脹閥降壓後，冷媒沸點約 5℃，低於空氣溫度，熱就流進冷媒使它沸騰。' } },
 
     { title: '量量看：每個點的壓力與溫度（互動）', loop: true, nominal: 30,
+      ready: S => S.seen.length >= 4 && S.tog >= 1, need: S => [S.seen.length < 4 ? `再量 ${4 - S.seen.length} 個點` : '', S.tog < 1 ? '按一次「關閉 A/C」' : ''].filter(Boolean).join('、'),
       captions: [[0, '點選管路上的編號，看那一點的<b>壓力、溫度、相態</b>和「戴手套摸起來」的感覺。至少量 4 個點，再按「關閉 A/C」看看高低壓會怎樣。', '點選管路上的編號，看那一點的壓力、溫度、相態，和戴手套摸起來的感覺。至少量四個點，再按關閉 A C，看看高低壓會怎樣。']],
       enter(S) { S.sel = -1; },
       panel(el, S) {
