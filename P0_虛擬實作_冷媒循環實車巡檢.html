@@ -78,10 +78,10 @@ const COMP = {
 const FLOW = { txv: ['comp', 'cond', 'rec', 'txv', 'evap'], ori: ['comp', 'cond', 'ori', 'evap', 'acc'] };
 /* 管路段：pts、真實側別 */
 const SEGS = {
-  txv: { dis: { p: [[95, 250], [95, 80], [90, 80]], s: 'H' }, liqA: { p: [[510, 95], [590, 95]], s: 'H' }, liqB: { p: [[607, 150], [607, 398]], s: 'H' },
-    evIn: { p: [[607, 428], [607, 500]], s: 'L' }, suc: { p: [[430, 536], [430, 425], [160, 425], [160, 300], [140, 300]], s: 'L' } },
-  ori: { dis: { p: [[95, 250], [95, 80], [90, 80]], s: 'H' }, liq: { p: [[510, 95], [607, 95], [607, 390]], s: 'H' },
-    evIn: { p: [[607, 426], [607, 500]], s: 'L' }, sucA: { p: [[430, 536], [430, 425], [400, 425]], s: 'L' }, sucB: { p: [[340, 425], [160, 425], [160, 300], [140, 300]], s: 'L' } },
+  txv: { dis: { p: [[95, 250], [95, 80], [90, 80]], s: 'H' }, liqA: { p: [[510, 95], [590, 95]], s: 'H' }, liqB: { p: [[607, 150], [607, 340]], s: 'H' },
+    evIn: { p: [[607, 370], [607, 500]], s: 'L' }, suc: { p: [[430, 536], [430, 425], [160, 425], [160, 300], [140, 300]], s: 'L' } },
+  ori: { dis: { p: [[95, 250], [95, 80], [90, 80]], s: 'H' }, liq: { p: [[510, 95], [607, 95], [607, 330]], s: 'H' },
+    evIn: { p: [[607, 366], [607, 500]], s: 'L' }, sucA: { p: [[430, 536], [430, 425], [400, 425]], s: 'L' }, sucB: { p: [[340, 425], [160, 425], [160, 300], [140, 300]], s: 'L' } },
 };
 const SEGNAME = { dis: '壓縮機→冷凝器', liqA: '冷凝器→儲液器', liqB: '儲液器→膨脹閥', liq: '冷凝器→毛細管', evIn: '節流後→蒸發器', suc: '蒸發器→壓縮機', sucA: '蒸發器→蓄液器', sucB: '蓄液器→壓縮機' };
 /* 量測點（真值在 fresh() 依外氣計算）；hz：附近危險 */
@@ -337,7 +337,7 @@ function render() {
   const mark = k => S.segMark[k] === 'H' ? '#d24a4a' : S.segMark[k] === 'L' ? '#3a7fd0' : '#8a98ad';
   const lbl = c => { const a = S.ans[c], fi = S.flow.indexOf(c); return (a ? a.n : '') + (fi >= 0 ? `　#${fi + 1}` : ''); };
   // 名稱標籤：另外畫在最上層、不擋點擊，位置逐一避開管路與量測點
-  const LBLPOS = { comp: [175, 246], cond: [255, 26], rec: [450, 152], txv: [445, 401], ori: [451, 396], acc: [300, 460], evap: [470, 558] };
+  const LBLPOS = { comp: [175, 246], cond: [255, 26], rec: [450, 152], txv: [445, 343], ori: [451, 336], acc: [300, 460], evap: [470, 558] };
   let labels = '';
   const comp = (c, x, y, w, h, body) => { if (lbl(c)) { const [lx, ly] = LBLPOS[c];
       labels += `<g pointer-events="none"><rect x="${lx}" y="${ly}" width="140" height="24" rx="6" fill="#1b2840" stroke="#ffd23f"/><text x="${lx + 70}" y="${ly + 17}" fill="#ffd23f" font-size="13" font-weight="700" text-anchor="middle">${esc(lbl(c))}</text></g>`; }
@@ -360,8 +360,8 @@ function render() {
   svg += comp('comp', 50, 255, 90, 70, `<rect x="50" y="255" width="90" height="70" rx="10" fill="#2a3b5e" stroke="#8ea3bf" stroke-width="2"/><circle cx="95" cy="345" r="22" fill="#16223a" stroke="#8ea3bf" stroke-width="3"/>`);
   svg += comp('cond', 90, 55, 420, 52, `<rect x="90" y="55" width="420" height="52" rx="6" fill="#1e2b44" stroke="#8ea3bf" stroke-width="2"/>${Array.from({ length: 41 }, (_, i) => `<line x1="${98 + i * 10}" y1="60" x2="${98 + i * 10}" y2="102" stroke="#3a4a66"/>`).join('')}<polyline points="95,72 500,72 500,90 95,90" fill="none" stroke="#8a98ad" stroke-width="5"/>`);
   if (sys === 'txv') { svg += comp('rec', 590, 70, 34, 80, `<rect x="590" y="70" width="34" height="80" rx="10" fill="#1b2840" stroke="#8ea3bf" stroke-width="2"/>`);
-    svg += comp('txv', 591, 398, 32, 30, `<rect x="591" y="398" width="32" height="30" rx="5" fill="#5d7396" stroke="#8ea3bf" stroke-width="2"/>`); }
-  else { svg += comp('ori', 597, 390, 20, 36, `<rect x="597" y="390" width="20" height="36" rx="4" fill="#e0a040" stroke="#8ea3bf" stroke-width="2"/>`);
+    svg += comp('txv', 591, 340, 32, 30, `<rect x="591" y="340" width="32" height="30" rx="5" fill="#5d7396" stroke="#8ea3bf" stroke-width="2"/>`); }
+  else { svg += comp('ori', 597, 330, 20, 36, `<rect x="597" y="330" width="20" height="36" rx="4" fill="#e0a040" stroke="#8ea3bf" stroke-width="2"/>`);
     svg += comp('acc', 340, 398, 60, 54, `<rect x="340" y="398" width="60" height="54" rx="12" fill="#1b2840" stroke="#8ea3bf" stroke-width="2"/>`); }
   svg += comp('evap', 440, 486, 200, 64, `<rect x="440" y="486" width="200" height="64" rx="6" fill="#1e2b44" stroke="#8ea3bf" stroke-width="2"/>${Array.from({ length: 19 }, (_, i) => `<line x1="${448 + i * 10}" y1="490" x2="${448 + i * 10}" y2="546" stroke="#3a4a66"/>`).join('')}<polyline points="607,500 450,500 450,518 630,518 630,536 440,536" fill="none" stroke="#8a98ad" stroke-width="5"/>`);
   // 檢修接口與檢修錶
