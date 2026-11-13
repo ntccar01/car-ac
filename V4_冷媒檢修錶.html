@@ -1001,7 +1001,7 @@ function stepScene(ctx, n, t) {   // n = 已完成步數
   const ends = { lx: conL ? -231 : -150, ly: conL ? 302 : 200, hx: conH ? 231 : 150, hy: conH ? 302 : 200, cx: 0, cy: 200 };
   manifold(ctx, 480, 170, .78, { lo, hi, pL: open ? PS : 0, pH: open ? PS : 0, hoseEnds: ends, cutL: n < 5 ? n >= 0 : false, cutH: false, hl: n === 3 ? 'kL,kH' : n === 4 ? 'cpl' : n === 7 ? 'cpl' : '' });
   if (n >= 2) H.text(ctx, '（保護蓋已鎖在錶組固定座）', 145, 270, { size: 14, color: C.mut, align: 'center' });
-  if (open) { H.box(ctx, 640, 60, 300, 92, { stroke: C.ok }); H.text(ctx, `引擎熄火、外氣 25℃\n高低壓都約 ${PS} kPa（平衡壓力）`, 790, 82, { size: 16, bold: true, align: 'center', color: C.ok }); }
+  if (open) { H.box(ctx, 690, 30, 262, 104, { stroke: C.ok }); H.text(ctx, `引擎熄火、外氣 25℃\n高低壓都約 ${PS} kPa\n（平衡壓力）`, 821, 50, { size: 16, bold: true, align: 'center', color: C.ok }); }
 }
 
 const V4 = {
@@ -1200,8 +1200,8 @@ const V4 = {
         carPorts(ctx, { capL: t >= 22, capH: t >= 22 });
         const conL = t < 13, conH = t < 18;   // 先拆藍色低壓、再拆紅色高壓
         manifold(ctx, 480, 170, .78, { pL: conL ? PS : 0, pH: conH ? PS : 0, hoseEnds: { lx: conL ? -231 : -150, ly: conL ? 302 : 200, hx: conH ? 231 : 150, hy: conH ? 302 : 200 }, hl: t < 8 ? 'kL,kH,cpl' : '' });
-        if (t >= 8 && t < 22) { H.box(ctx, 640, 60, 300, 80, { stroke: C.bad }); H.text(ctx, '抹布包住接頭再拆\n高壓側小心冷媒噴出', 790, 80, { size: 17, bold: true, align: 'center', color: C.bad }); }
-        if (t >= 22) { H.box(ctx, 640, 60, 300, 80, { stroke: C.ok }); H.text(ctx, '保護蓋徒手鎖緊\n（確認密封圈）', 790, 80, { size: 17, bold: true, align: 'center', color: C.ok }); }
+        if (t >= 8 && t < 22) { H.box(ctx, 690, 30, 262, 80, { stroke: C.bad }); H.text(ctx, '抹布包住接頭再拆\n高壓側小心冷媒噴出', 821, 50, { size: 17, bold: true, align: 'center', color: C.bad }); }
+        if (t >= 22) { H.box(ctx, 690, 30, 262, 80, { stroke: C.ok }); H.text(ctx, '保護蓋徒手鎖緊\n（確認密封圈）', 821, 50, { size: 17, bold: true, align: 'center', color: C.ok }); }
       },
       quiz: { q: '拆卸高壓側快速接頭時，為什麼要用抹布包住？', opts: ['高壓側可能有少量冷媒噴出', '為了讓接頭比較好轉', '防止手動閥打開', '抹布可以吸收冷凍油再利用'], ans: 0, ex: '高壓側壓力較高，拆接頭時可能噴出少量冷媒與冷凍油，抹布可防止噴濺。' } },
 
