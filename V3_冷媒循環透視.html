@@ -627,7 +627,7 @@ function Activity(root, cfg) {
   return { start };
 }
 
-/* 車輛空調檢修實習 V3 冷媒循環透視（第 2 次課） */
+/* 車輛空調檢修實習 共用：R-134a 飽和表、冷氣系統圖 drawAC、壓力錶 gauge */
 /* R-134a 飽和表（℃, 絕對壓力 MPa）；錶壓 kPa = (絕對 − 0.1013) × 1000 */
 const R134A = [[-26.07, .1013], [-20, .1327], [-10, .2006], [0, .2928], [5, .3497], [10, .4146], [20, .5717], [25, .6654], [30, .7702], [40, 1.0166], [45, 1.1599], [50, 1.3179], [55, 1.4920], [60, 1.6818], [70, 2.1168]];
 const satT = g => { const a = g / 1000 + .1013; for (let i = 1; i < R134A.length; i++) { const [t1, p1] = R134A[i - 1], [t2, p2] = R134A[i]; if (a <= p2 || i === R134A.length - 1) return t1 + (t2 - t1) * (a - p1) / (p2 - p1); } };
@@ -800,6 +800,8 @@ function gauge(ctx, x, y, r, val, max, name, col) {
   H.text(ctx, name, x, y + r * .45, { size: 13, bold: true, align: 'center', color: col });
   H.text(ctx, `${Math.round(val)} kPa`, x, y + r + 14, { size: 16, bold: true, align: 'center' });
 }
+
+/* 車輛空調檢修實習 V3 冷媒循環透視（第 2 次課）— 需先載入 common.js */
 /* 互動段量測點 */
 const MPTS = [
   { n: '①', name: '壓縮機出口', x: 110, y: 330, k: 'dis', f: .1 },

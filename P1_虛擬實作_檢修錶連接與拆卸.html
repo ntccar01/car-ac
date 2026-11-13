@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>虛擬實作檢定｜冷媒檢修錶連接與拆卸</title>
+<style>
+:root{--bg:#0a1120;--panel:#121c30;--panel2:#18243d;--line:#2a3a5c;--ink:#e6ecf5;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ad07a;--bad:#ff5d5d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0}header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:8px;padding:2px 10px}
+header a{color:var(--acc2);margin-left:auto}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;padding:12px 16px}
+@media(max-width:980px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0d1526;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none}
+.side{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:16px;color:var(--acc)}
+.stat{display:flex;gap:10px;flex-wrap:wrap;font-size:15px}.stat b{font-size:20px}
+.steps{margin:0;padding-left:22px;font-size:14px;line-height:1.55;max-height:320px;overflow:auto}.steps li.done{color:var(--ok)}.steps li.now{color:var(--acc);font-weight:700}
+.log{font-size:13px;line-height:1.5;max-height:180px;overflow:auto;color:var(--mut)}.log .m{color:var(--bad);font-weight:700}.log .d{color:#ffb86b}.log .g{color:var(--ok)}
+button{font:inherit;font-size:15px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:7px 12px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#1a1200;font-weight:700}button:disabled{opacity:.45;cursor:default}
+select,input{font:inherit;font-size:15px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#0d1526;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+#menu{position:absolute;display:none;z-index:5;background:#0b1424f0;border:2px solid var(--acc);border-radius:12px;padding:8px;min-width:230px;box-shadow:0 8px 30px #000a}
+#menu .t{font-size:13px;color:var(--mut);margin:0 4px 6px}#menu button{display:block;width:100%;text-align:left;margin:4px 0;font-size:15px}
+#alert{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;z-index:8}
+#alert .box{background:var(--panel);border:3px solid var(--bad);border-radius:16px;padding:20px 24px;max-width:560px;text-align:center}
+#alert h2{margin:0 0 8px;color:var(--bad)}#alert p{font-size:17px;line-height:1.6}
+.result{font-size:15px;line-height:1.6}.result table{width:100%;border-collapse:collapse;font-size:14px}.result td{border-bottom:1px solid var(--line);padding:4px 6px}
+.pass{color:var(--ok);font-size:26px;font-weight:800}.fail{color:var(--bad);font-size:26px;font-weight:800}
+.cert{border:3px double var(--ok);border-radius:12px;padding:10px;margin-top:8px;text-align:center}
+.hint{font-size:13px;color:var(--mut)}
+</style></head><body>
+<script src="firebase-config.js"></script><script src="score.js"></script>
+<header><span class="tag">虛擬實作</span><h1>冷媒檢修錶 連接與拆卸</h1><span class="hint">通過「檢定模式」才能到實車操作</span><a href="index.html">← 課程首頁</a></header>
+<div class="main">
+  <div class="stage"><svg id="sv" viewBox="0 0 1000 620"></svg><div id="menu"></div>
+    <div id="alert"><div class="box"><h2 id="aT"></h2><p id="aP"></p><button class="pri" id="aB">知道了</button></div></div></div>
+  <div class="side">
+    <div class="card" id="setup"></div>
+    <div class="card"><div class="stat"><span>模式：<b id="sMode">—</b></span><span>⏱ <b id="sTime">0:00</b></span><span>分數 <b id="sScore">100</b></span></div>
+      <div class="row hint" id="sPpe"></div></div>
+    <div class="card" id="recCard" style="display:none"><h3>📝 讀錶紀錄</h3>
+      <div class="row">低壓錶 <input id="rLo" type="number" style="width:90px"> kPa</div>
+      <div class="row">高壓錶 <input id="rHi" type="number" style="width:90px"> kPa</div>
+      <div class="row"><select id="rJ"><option value="">判斷結果…</option><option value="eq">高低壓相同：靜態平衡壓力</option><option value="hl">高壓高於低壓：系統運轉中</option><option value="zero">兩錶為 0：系統無冷媒</option></select></div>
+      <div class="row"><button class="pri" id="rGo">送出紀錄</button><span class="hint" id="rMsg"></span></div></div>
+    <div class="card" id="stepCard"><h3>作業程序</h3><ol class="steps" id="steps"></ol></div>
+    <div class="card"><h3>操作紀錄</h3><div class="log" id="log"></div></div>
+  </div>
+</div>
+<script>
+/* ===== R-134a 飽和壓力（錶壓 kPa）；與課本表 2-1 一致（20℃ 470.3、25℃ 563.9、30℃ 668.7） ===== */
+const R134A = [[-26.07, .1013], [-20, .1327], [-10, .2006], [0, .2928], [5, .3497], [10, .4146], [20, .5717], [25, .6654], [30, .7702], [35, .8870], [40, 1.0166], [45, 1.1599], [50, 1.3179], [55, 1.4920], [60, 1.6818]];
+const satP = T => { for (let i = 1; i < R134A.length; i++) if (T <= R134A[i][0]) { const [a, p] = R134A[i - 1], [b, q] = R134A[i]; return (p + (q - p) * (T - a) / (b - a) - .1013) * 1000; } return 915; };
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+const LIMIT = 600;   // 檢定時間 10 分鐘
+const PASS = 80;
+
+/* ===== 評分項目（同紙本實作檢核表；技術士術科評分表寫法） ===== */
+const MAJOR = {
+  ppe: '未配戴護目鏡及防油污手套即操作冷媒相關部件',
+  run: '引擎運轉中拆裝檢修錶（皮帶、風扇捲入危險）',
+  vent: '冷媒排放到大氣中',
+  core: '以工具壓閥嘴測試，冷媒噴出',
+  time: '超過檢定時間（10 分鐘）未完成',
+};
+const DED = {
+  acOff: ['連接前未關閉空調開關', 5],
+  capBay: ['保護蓋未鎖在錶組固定座（隨手放置）', 5],
+  noClean: ['連接前未檢視、清潔檢修接口與閥嘴', 5],
+  hvCheck: ['連接前未確認手動閥關閉', 5],
+  soCheck: ['連接前未確認切斷閥關閉', 5],
+  over: ['手動閥過度扭緊', 5],
+  wrong: ['快速接頭拿錯接口（藍接 L、紅接 H）', 5],
+  noSupport: ['連接時未用手支撐管路', 5],
+  record: ['讀錶紀錄或判斷錯誤', 10],
+  rag: ['拆卸接頭時未以抹布包覆', 5],
+  order: ['拆卸順序錯誤（應先拆低壓、再拆高壓）', 5],
+  wrench: ['以工具鎖緊保護蓋（應徒手）', 5],
+  capMiss: ['保護蓋未裝回', 10],
+  hvEnd: ['完成時手動閥未關閉', 5],
+  soEnd: ['完成時切斷閥未關閉', 5],
+  notRec: ['未讀錶紀錄', 10],
+};
+const STEPS = [
+  ['ppe', '配戴護目鏡與防油污手套'],
+  ['off', '關閉空調、引擎熄火'],
+  ['caps', '拆下 H、L 保護蓋，鎖在錶組固定座'],
+  ['clean', '檢視並清潔兩個檢修接口與閥嘴'],
+  ['hv', '順時針旋入，確認兩個手動閥關閉'],
+  ['so', '逆時針旋出，確認兩個切斷閥關閉'],
+  ['conL', '支撐管路，藍色快速接頭接 L'],
+  ['conH', '支撐管路，紅色快速接頭接 H'],
+  ['open', '順時針旋入兩個切斷閥，頂開閥嘴'],
+  ['rec', '讀錶並記錄、判斷'],
+  ['soOff', '拆卸：逆時針旋出，關閉兩個切斷閥'],
+  ['offL', '抹布包住，先拆低壓藍色接頭'],
+  ['offH', '抹布包住，再拆高壓紅色接頭'],
+  ['capOn', '檢查密封圈，徒手鎖回 H、L 保護蓋'],
+  ['fin', '按「完成作業」'],
+];
+
+let S, timer = null, who = { cls: store.get('act_cls'), grp: store.get('act_grp'), op: store.get('p1_op') || '1' };
+function fresh(mode) {
+  const r = () => Math.random() < .5, amb = 24 + Math.floor(Math.random() * 9);
+  S = { mode, amb, t0: Date.now(), sec: 0, end: false,
+    ppe: { g: false, h: false }, eng: true, ac: true,
+    cap: { L: 'on', H: 'on' }, clean: { L: false, H: false },
+    hv: { L: r(), H: r() }, so: { L: r(), H: r() }, hvChk: { L: false, H: false }, soChk: { L: false, H: false },
+    cpl: { L: 'hang', H: 'hang' }, hold: null, rec: null, removed: [],
+    ded: {}, major: null, log: [], done: new Set() };
+  if (!S.hv.L && !S.hv.H && !S.so.L && !S.so.H) S.hv.L = true;   // 至少一個閥一開始是開的，逼學生檢查
+  clearInterval(timer); timer = setInterval(tick, 500);
+  log(`開始${mode === 'exam' ? '檢定' : '練習'}。外氣溫度 ${amb}℃，車輛怠速運轉、空調開啟中。`, 'g');
+  render();
+}
+function tick() { if (!S || S.end) return; S.sec = (Date.now() - S.t0) / 1000; $('#sTime').textContent = fmt(S.sec);
+  if (S.mode === 'exam' && S.sec > LIMIT) major('time'); }
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function log(s, c = '') { S.log.unshift(`<div class="${c}">[${fmt(S.sec || 0)}] ${s}</div>`); }
+function ded(k, side = '') { const key = k + side; if (S.ded[key]) return; S.ded[key] = DED[k][1]; log(`扣分 −${DED[k][1]}：${DED[k][0]}${side ? `（${side === 'L' ? '低壓' : '高壓'}）` : ''}`, 'd'); }
+function major(k, extra = '') {
+  if (S.end) return;
+  log(`重大缺失：${MAJOR[k]}${extra}`, 'm');
+  if (S.mode === 'exam') { S.major = k; finish(); }
+  else { if (!S.majors) S.majors = []; S.majors.push(k); showAlert('⚠ 重大缺失', `${MAJOR[k]}${extra}<br><br>檢定模式中，這一項會<b>直接不及格</b>。<br>（練習模式：可以繼續操作）`); }
+}
+const score = () => Math.max(0, 100 - Object.values(S.ded).reduce((a, b) => a + b, 0));
+const touchRef = () => { if (!S.ppe.g || !S.ppe.h) { major('ppe'); return false; } return true; };
+const engCheck = () => { if (S.eng) { major('run'); return false; } return true; };
+/* 冷媒排放判斷：接頭在接口上＋切斷閥頂開閥嘴＋同側手動閥開（中央軟管沒接設備）→ 排放 */
+function ventCheck() {
+  for (const s of ['L', 'H']) if (S.cpl[s] === s && S.so[s] && S.hv[s]) { major('vent', `（${s === 'L' ? '低壓' : '高壓'}手動閥開著，冷媒由中央軟管噴出）`); return true; }
+  return false;
+}
+const connected = () => S.cpl.L === 'L' && S.cpl.H === 'H' && S.so.L && S.so.H;
+const pressure = () => connected() ? Math.round(satP(S.amb)) : 0;
+
+/* ===== 動作選單 ===== */
+function menu(x, y, title, items) {
+  const m = $('#menu'), st = $('.stage').getBoundingClientRect(), sv = $('#sv').getBoundingClientRect(), k = sv.width / 1000;
+  m.innerHTML = `<div class="t">${title}</div>` + items.map((it, i) => `<button data-i="${i}">${it[0]}</button>`).join('') + '<button data-i="x">✕ 取消</button>';
+  m.style.display = 'block'; let L = x * k + 10, T = y * k + 10; if (L + 250 > st.width) L = st.width - 260; if (T + m.offsetHeight > st.height) T = Math.max(4, st.height - m.offsetHeight - 6);
+  m.style.left = L + 'px'; m.style.top = T + 'px';
+  m.querySelectorAll('button').forEach(b => b.onclick = e => { e.stopPropagation(); m.style.display = 'none'; if (b.dataset.i !== 'x') { items[+b.dataset.i][1](); after(); } });
+}
+function after() { checkSteps(); render(); }
+function showAlert(t, p) { $('#aT').textContent = t; $('#aP').innerHTML = p; $('#alert').style.display = 'flex'; }
+$('#aB').onclick = () => { $('#alert').style.display = 'none'; };
+
+function act(obj, x, y) {
+  if (!S || S.end) return;
+  const side = obj.slice(-1), nm = side === 'L' ? '低壓' : '高壓';
+  // 手上拿著接頭時，點接口 → 連接
+  if (S.hold && obj.startsWith('port')) return connectTo(side, x, y);
+  if (S.hold && !obj.startsWith('port') && !/^(gL|gH|zoomX)$/.test(obj)) { log(`把${S.hold === 'L' ? '藍色' : '紅色'}接頭放回固定座。`); S.cpl[S.hold] = 'hang'; S.hold = null; return after(); }
+  switch (obj) {
+    case 'gog': return menu(x, y, '護目鏡', [['配戴護目鏡', () => { S.ppe.g = true; log('配戴護目鏡。', 'g'); }]]);
+    case 'glv': return menu(x, y, '防油污手套', [['配戴防油污手套', () => { S.ppe.h = true; log('配戴防油污手套。', 'g'); }]]);
+    case 'acsw': return menu(x, y, `空調開關（目前：${S.ac ? 'ON' : 'OFF'}）`, [[S.ac ? '關閉空調 A/C' : '開啟空調 A/C', () => { S.ac = !S.ac; log(`空調 ${S.ac ? 'ON' : 'OFF'}。`); }]]);
+    case 'key': return menu(x, y, `點火開關（目前：${S.eng ? '引擎運轉' : '熄火'}）`, [[S.eng ? '引擎熄火（OFF）' : '發動引擎', () => { if (S.eng && S.ac) ded('acOff'); S.eng = !S.eng; log(S.eng ? '發動引擎。' : '引擎熄火。'); }]]);
+    case 'capL': case 'capH':
+      if (S.cap[side] === 'on') return menu(x, y, `${nm}側保護蓋（${side}）`, [
+        ['拆下，鎖在錶組固定座上', () => { if (!touchRef() || !engCheck()) return; S.cap[side] = 'holder'; log(`拆下 ${side} 保護蓋，鎖在固定座。`, 'g'); }],
+        ['拆下，暫放在引擎室', () => { if (!touchRef() || !engCheck()) return; S.cap[side] = 'bay'; ded('capBay', side); log(`拆下 ${side} 保護蓋，放在引擎室。`); }]]);
+      return;
+    case 'portL': case 'portH':
+      if (S.cpl[side] === side) return couplerMenu(side, x, y);
+      if (S.cap[side] === 'on') return act('cap' + side, x, y);
+      return menu(x, y, `${nm}檢修接口（${side}）`, [
+        ['用抹布清潔，檢視閥嘴有無損傷、洩漏', () => { if (!touchRef()) return; S.clean[side] = true; log(`清潔並檢視 ${side} 接口。`, 'g'); }],
+        ['用起子壓一下閥嘴，確認有沒有冷媒', () => { if (!touchRef()) return; major('core'); }],
+        ['檢查保護蓋密封圈，徒手鎖回保護蓋', () => capOn(side, false)],
+        ['用扳手鎖緊保護蓋', () => capOn(side, true)]]);
+    case 'hvL': case 'hvH':
+      return menu(x, y, `${nm}手動閥（目前：${S.hv[side] ? '開' : '關'}）`, [
+        ['順時針旋到底（關閉）', () => { S.hv[side] = false; S.hvChk[side] = true; log(`${nm}手動閥順時針旋到底 → 關閉。`, 'g'); }],
+        ['順時針用力鎖到最緊', () => { S.hv[side] = false; S.hvChk[side] = true; ded('over', side); log(`${nm}手動閥過度扭緊。`); }],
+        ['逆時針旋出（打開）', () => { S.hv[side] = true; log(`${nm}手動閥逆時針旋出 → 打開。`); ventCheck(); }]]);
+    case 'soL': case 'soH':
+      return menu(x, y, `${side === 'L' ? '藍色' : '紅色'}接頭切斷閥（目前：${S.so[side] ? '旋入（頂開閥嘴）' : '旋出（關閉）'}）`, [
+        ['順時針旋入（頂開閥嘴）', () => { if (S.cpl[side] === side && !touchRef()) return; S.so[side] = true; log(`${nm}切斷閥順時針旋入。`); if (S.cpl[side] !== side && !S.soChkDone) {} ventCheck(); }],
+        ['逆時針旋出（關閉）', () => { S.so[side] = false; S.soChk[side] = true; log(`${nm}切斷閥逆時針旋出 → 關閉。`, 'g'); }]]);
+    case 'cplL': case 'cplH':
+      if (S.cpl[side] === 'hang') return menu(x, y, `${side === 'L' ? '藍色（低壓）' : '紅色（高壓）'}快速接頭`, [['拿起接頭，準備連接（再點檢修接口）', () => { if (!touchRef()) return; S.cpl[side] = 'hand'; S.hold = side; log(`拿起${side === 'L' ? '藍色' : '紅色'}接頭。`); }]]);
+      return couplerMenu(S.cpl[side] === 'L' ? 'L' : 'H', x, y);
+    case 'gL': case 'gH': S.zoom = side; return render();
+    case 'zoomX': S.zoom = null; return render();
+    case 'done': return finishCheck();
+  }
+}
+function couplerMenu(port, x, y) {
+  const side = S.cpl.L === port ? 'L' : 'H';
+  menu(x, y, `接在 ${port} 接口上的${side === 'L' ? '藍色' : '紅色'}接頭`, [
+    ['用抹布包住接頭，小心拆下', () => removeCpl(side, true)],
+    ['直接拆下', () => removeCpl(side, false)]]);
+}
+function connectTo(port, x, y) {
+  const side = S.hold;
+  if (S.cap[port] === 'on') { log(`${port} 保護蓋還沒拆，無法連接。`); return render(); }
+  if (S.cpl.L === port || S.cpl.H === port) { log('這個接口已經接上了。'); return render(); }
+  menu(x, y, `把${side === 'L' ? '藍色' : '紅色'}接頭接到 ${port} 接口`, [
+    ['一手支撐管路，另一手壓入接頭', () => doConnect(side, port, true)],
+    ['直接用力壓入接頭', () => doConnect(side, port, false)]]);
+}
+function doConnect(side, port, sup) {
+  if (!engCheck()) return;
+  if (side !== port) { ded('wrong'); log(`${side === 'L' ? '藍色' : '紅色'}接頭口徑和 ${port} 接口不同，接不上！`); return; }
+  if (!S.clean[port]) ded('noClean', port);
+  if (!S.hvChk.L || !S.hvChk.H) ded('hvCheck');
+  if (!S.soChk[side]) ded('soCheck', side);
+  if (!sup) ded('noSupport', side);
+  if (S.ac) ded('acOff');
+  S.cpl[side] = port; S.hold = null; log(`${side === 'L' ? '藍色' : '紅色'}接頭接上 ${port} 接口。`, 'g');
+  if (S.so[side]) { major('vent', '（切斷閥是旋入狀態，一接上閥嘴就被頂開，冷媒噴出）'); }
+  ventCheck();
+}
+function removeCpl(side, rag) {
+  if (!touchRef() || !engCheck()) return;
+  if (S.so[side]) { major('vent', '（切斷閥未關閉就拆接頭，冷媒噴出）'); }
+  if (!rag) ded('rag', side);
+  if (side === 'H' && S.cpl.L === 'L') ded('order');
+  S.cpl[side] = 'hang'; S.removed.push(side); log(`拆下${side === 'L' ? '藍色' : '紅色'}接頭，掛回固定座。`, 'g');
+}
+function capOn(side, wrench) {
+  if (S.cpl.L === side || S.cpl.H === side) { log('接頭還接著，不能鎖保護蓋。'); return; }
+  if (S.cap[side] === 'on') { log('保護蓋已經裝著。'); return; }
+  if (!touchRef()) return;
+  if (wrench) ded('wrench', side);
+  S.cap[side] = 'on'; log(`${side} 保護蓋鎖回${wrench ? '（用扳手）' : '（徒手）'}。`, 'g');
+}
+/* 讀錶紀錄 */
+$('#rGo').onclick = () => {
+  const lo = +$('#rLo').value, hi = +$('#rHi').value, j = $('#rJ').value, p = pressure();
+  if (!$('#rLo').value || !$('#rHi').value || !j) { $('#rMsg').textContent = '請填完兩個讀數和判斷。'; return; }
+  const ok = Math.abs(lo - p) <= 30 && Math.abs(hi - p) <= 60 && j === 'eq';
+  S.rec = { lo, hi, j, ok }; if (!ok) ded('record');
+  log(`紀錄：低壓 ${lo}、高壓 ${hi} kPa（${$('#rJ').selectedOptions[0].text}）${ok ? '' : '→ 有誤'}`, ok ? 'g' : 'd');
+  $('#rMsg').textContent = ok ? '✔ 已記錄' : '已記錄（有誤，已扣分）'; after();
+};
+/* 作業程序進度 */
+function checkSteps() {
+  const d = S.done, conAt = S.cpl.L === 'L' && S.cpl.H === 'H';
+  if (S.ppe.g && S.ppe.h) d.add('ppe');
+  if (!S.eng && !S.ac) d.add('off');
+  if (S.cap.L !== 'on' && S.cap.H !== 'on') d.add('caps');
+  if (S.clean.L && S.clean.H) d.add('clean');
+  if (S.hvChk.L && S.hvChk.H && !S.hv.L && !S.hv.H) d.add('hv');
+  if (S.soChk.L && S.soChk.H && d.has('hv')) d.add('so');
+  if (S.cpl.L === 'L') d.add('conL'); if (S.cpl.H === 'H') d.add('conH');
+  if (connected()) d.add('open');
+  if (S.rec) d.add('rec');
+  if (d.has('rec') && !S.so.L && !S.so.H) d.add('soOff');
+  if (S.removed.includes('L')) d.add('offL'); if (S.removed.includes('H')) d.add('offH');
+  if (d.has('offH') && S.cap.L === 'on' && S.cap.H === 'on') d.add('capOn');
+}
+function finishCheck() {
+  if (!S.rec) ded('notRec');
+  ['L', 'H'].forEach(s => { if (S.cap[s] !== 'on') ded('capMiss', s); if (S.hv[s]) ded('hvEnd', s); if (S.so[s] || S.cpl[s] === s) ded('soEnd', s); });
+  S.done.add('fin'); finish();
+}
+function finish() {
+  S.end = true; clearInterval(timer); S.sec = (Date.now() - S.t0) / 1000;
+  const sc = S.major ? 0 : score(), pass = !S.major && sc >= PASS && S.mode === 'exam';
+  const items = Object.entries(S.ded).map(([k, v]) => { const base = k.replace(/[LH]$/, ''); return [DED[base] ? DED[base][0] + (k !== base ? `（${k.endsWith('L') ? '低壓' : '高壓'}）` : '') : k, v]; });
+  const code = pass ? ('AC' + ((Date.now() / 1000 | 0) % 100000).toString(36).toUpperCase() + '-' + who.grp + who.op) : '';
+  $('#stepCard').innerHTML = `<h3>${S.mode === 'exam' ? '檢定結果' : '練習結果'}</h3><div class="result">
+    <div class="${pass || (S.mode !== 'exam' && !S.major && !(S.majors || []).length && sc >= PASS) ? 'pass' : 'fail'}">${S.major ? '不及格（重大缺失）' : sc >= PASS ? (S.mode === 'exam' ? '及格 ✔' : '練習達標 ✔') : '未達 80 分'}</div>
+    <div>分數 <b>${sc}</b> / 100　用時 ${fmt(S.sec)}</div>
+    ${S.major ? `<div style="color:#ff5d5d">重大缺失：${MAJOR[S.major]}</div>` : ''}
+    ${(S.majors || []).length ? `<div style="color:#ff5d5d">練習中的重大缺失：${S.majors.map(k => MAJOR[k]).join('；')}</div>` : ''}
+    ${items.length ? `<table>${items.map(([a, b]) => `<tr><td>${esc(a)}</td><td>−${b}</td></tr>`).join('')}</table>` : '<div>沒有扣分項目 👍</div>'}
+    ${pass ? `<div class="cert">🎫 <b>實車操作資格</b><br>${esc(who.cls)} 第 ${esc(who.grp)} 組・操作者 ${esc(who.op)}<br>檢定碼 <b>${code}</b><br>${new Date().toLocaleString('zh-TW')}<br><span class="hint">把這個畫面給老師看</span></div>` : ''}
+    <div class="row"><button class="pri" id="again">再做一次</button></div></div>`;
+  $('#again').onclick = () => location.reload();
+  if (S.mode === 'exam' && window.Score) Score.submit({ lesson: 'AC-P1', title: `檢修錶連接｜操作者${who.op}｜${pass ? '及格' : '不及格'}${S.major ? '（重大缺失）' : ''}`, cls: who.cls, grp: +who.grp,
+    score: sc, total: 100, pct: sc, sec: S.sec, detail: [{ round: '操作者' + who.op, got: sc, of: 100 }].concat(items.map(([a, b]) => ({ round: a.slice(0, 20), got: -b, of: 0 }))), at: new Date().toISOString() })
+    .then(r => log(r.ok ? '成績已上傳。' : '成績未上傳（離線），請給老師看畫面。', r.ok ? 'g' : 'd')).then(render);
+  render();
+}
+
+/* ===== 畫面 ===== */
+/* 放大錶：低壓 −760 mmHg～1500 kPa（每格 20 kPa）＋綠色 R-134a 飽和溫度；高壓 0～3500 kPa（每格 50 kPa） */
+const satT = g => { const a = g / 1000 + .1013; for (let i = 1; i < R134A.length; i++) { const [t1, p1] = R134A[i - 1], [t2, p2] = R134A[i]; if (a <= p2) return t1 + (t2 - t1) * (a - p1) / (p2 - p1); } return 60; };
+function bigGauge(sd, v) {
+  const cx = 500, cy = 310, r = 245, lo = sd === 'L', min = lo ? -101.3 : 0, max = lo ? 1500 : 3500, step = lo ? 20 : 50, lab = lo ? 100 : 500, col = lo ? '#38c6ff' : '#ff5d5d';
+  const A = x => (135 + 270 * (x - min) / (max - min)) * Math.PI / 180, P = (a, rr) => [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr];
+  let t = '';
+  for (let x = 0; x <= max; x += step) { const a = A(x), big = x % lab === 0, [x1, y1] = P(a, r - 6), [x2, y2] = P(a, r - (big ? 30 : 18));
+    t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e6ecf5" stroke-width="${big ? 3 : 1.5}"/>`;
+    if (big) { const [tx, ty] = P(a, r - 52); t += `<text x="${tx}" y="${ty + 6}" fill="#e6ecf5" font-size="18" text-anchor="middle">${x}</text>`; } }
+  if (lo) { for (let m = 0; m <= 760; m += 76) { const a = A(-m / 760 * 101.3), [x1, y1] = P(a, r - 6), [x2, y2] = P(a, r - 20); t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ff8a8a" stroke-width="2"/>`; }
+    const [mx, my] = P(A(-101.3), r - 52); t += `<text x="${mx}" y="${my + 6}" fill="#ff8a8a" font-size="15" text-anchor="middle">-760</text>`;
+    let last = -9; for (let T = -10; T <= 55; T += 5) { const g = (R134A.find(e => e[0] === T) ? R134A.find(e => e[0] === T)[1] : null); const gp = g ? (g - .1013) * 1000 : null; if (gp == null || gp < 0 || gp > max) continue;
+      const a = A(gp), [x1, y1] = P(a, r - 84), [x2, y2] = P(a, r - 98); t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3ad07a" stroke-width="2"/>`;
+      if (a - last > .16) { last = a; const [tx, ty] = P(a, r - 116); t += `<text x="${tx}" y="${ty + 5}" fill="#3ad07a" font-size="15" text-anchor="middle">${T}</text>`; } }
+    t += `<text x="${cx}" y="${cy + 120}" fill="#3ad07a" font-size="15" text-anchor="middle">綠：R-134a 飽和溫度 ℃</text><text x="${cx - 120}" y="${cy + 196}" fill="#ff8a8a" font-size="14" text-anchor="middle">真空 mmHg</text>`; }
+  const a = A(v), [nx, ny] = P(a, r - 40);
+  return `<g data-o="zoomX" style="cursor:zoom-out"><rect width="1000" height="620" fill="#000c"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#0d1526" stroke="${col}" stroke-width="8"/>${t}
+    <text x="${cx}" y="${cy + 80}" fill="#e6ecf5" font-size="18" text-anchor="middle">kPa</text><text x="${cx}" y="${cy - 80}" fill="${col}" font-size="24" font-weight="800" text-anchor="middle">${lo ? '低壓錶' : '高壓錶'}</text>
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="10" fill="#ffb020"/>
+    <text x="${cx}" y="604" fill="#ffb020" font-size="16" text-anchor="middle">點任意處關閉</text></g>`;
+}
+function render() {
+  if (!S) return;
+  const p = Math.round(satP(S.amb)), gv = sd => S.cpl[sd] === sd && S.so[sd] ? p : 0, ang = (v, max, vac) => 135 + 270 * Math.min(1, Math.max(0, (v + vac) / (max + vac)));
+  const g = (cx, cy, v, max, vac, col, name, obj) => { const a = ang(v, max, vac) * Math.PI / 180;
+    let t = ''; for (let i = 0; i <= 10; i++) { const b = (135 + 27 * i) * Math.PI / 180; t += `<line x1="${cx + Math.cos(b) * 46}" y1="${cy + Math.sin(b) * 46}" x2="${cx + Math.cos(b) * 38}" y2="${cy + Math.sin(b) * 38}" stroke="#c9d3e0" stroke-width="2"/>`; }
+    return `<g><circle cx="${cx}" cy="${cy}" r="54" fill="#0d1526" stroke="${col}" stroke-width="5"/>${t}
+      <text x="${cx}" y="${cy + 26}" fill="${col}" font-size="13" text-anchor="middle" font-weight="700">${name}</text>
+      <line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(a) * 42}" y2="${cy + Math.sin(a) * 42}" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="#ffb020"/>
+      <text x="${cx}" y="${cy - 62}" fill="#ffb020" font-size="12" text-anchor="middle">🔍 點錶面放大</text><circle data-o="${obj}" cx="${cx}" cy="${cy}" r="56" fill="transparent" style="cursor:zoom-in"/></g>`; };
+  const knob = (x, side, col) => { const open = S.hv[side], dx = open ? (side === 'L' ? -14 : 14) : 0;
+    return `<g data-o="hv${side}" style="cursor:pointer"><rect x="${x - 22 + dx}" y="216" width="44" height="58" rx="9" fill="${col}" stroke="#ffb020" stroke-width="2"/>
+      <text x="${x + dx}" y="250" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">${open ? '開' : '關'}</text><text x="${x + dx}" y="294" fill="#9fb0cf" font-size="12" text-anchor="middle">手動閥</text></g>`; };
+  const portPos = { L: [250, 488], H: [750, 488] }, hang = { L: [395, 392], H: [605, 392] };
+  const cplPos = s => S.cpl[s] === 'L' || S.cpl[s] === 'H' ? [portPos[S.cpl[s]][0], portPos[S.cpl[s]][1] - 52] : S.cpl[s] === 'hand' ? [s === 'L' ? 330 : 670, 420] : hang[s];
+  const cpl = s => { const [x, y] = cplPos(s), col = s === 'L' ? '#2f8fe0' : '#e04848', open = S.so[s];
+    return `<g><rect data-o="cpl${s}" x="${x - 18}" y="${y}" width="36" height="50" rx="7" fill="${col}" stroke="${S.hold === s ? '#ffb020' : '#111'}" stroke-width="${S.hold === s ? 4 : 2}" style="cursor:pointer"/>
+      <rect data-o="so${s}" x="${x - 14}" y="${y - (open ? 16 : 28)}" width="28" height="${open ? 18 : 30}" rx="5" fill="#c9d3e0" stroke="#ffb020" stroke-width="2" style="cursor:pointer"/>
+      <text x="${x + 24}" y="${y - 8}" fill="#9fb0cf" font-size="11">切斷閥：${open ? '旋入' : '旋出'}</text></g>`; };
+  const hose = (s, col) => { const [x, y] = cplPos(s), x0 = s === 'L' ? 430 : 570; return `<path d="M${x0} 300 C ${x0} 360, ${x} ${y - 90}, ${x} ${y - 20}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round"/><path d="M${x0} 300 C ${x0} 360, ${x} ${y - 90}, ${x} ${y - 20}" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="14 10"/>`; };
+  const cap = s => { const [x, y] = portPos[s], col = s === 'L' ? '#38c6ff' : '#ff7070';
+    if (S.cap[s] === 'on') return `<g data-o="cap${s}" style="cursor:pointer"><rect x="${x - 18}" y="${y - 30}" width="36" height="32" rx="7" fill="#1b2533" stroke="${col}" stroke-width="3"/><text x="${x}" y="${y - 9}" fill="${col}" font-size="17" font-weight="700" text-anchor="middle">${s}</text></g>`;
+    const [hx, hy] = S.cap[s] === 'holder' ? [s === 'L' ? 380 : 620, 322] : [x + 60, y + 6];
+    return `<g><rect x="${hx - 13}" y="${hy - 12}" width="26" height="24" rx="5" fill="#1b2533" stroke="${col}" stroke-width="2"/><text x="${hx}" y="${hy + 5}" fill="${col}" font-size="13" text-anchor="middle">${s}</text></g>`; };
+  const vent = S.majors && S.majors.includes('vent') && !S.ventShown;
+  $('#sv').innerHTML = `
+  <rect x="0" y="0" width="1000" height="620" fill="#0d1526"/>
+  <!-- 護具架 -->
+  <rect x="16" y="14" width="250" height="90" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="28" y="34" fill="#9fb0cf" font-size="13">護具架</text>
+  <g data-o="gog" style="cursor:pointer;opacity:${S.ppe.g ? .3 : 1}"><text x="70" y="82" font-size="38" text-anchor="middle">🥽</text><text x="70" y="98" fill="#e6ecf5" font-size="12" text-anchor="middle">護目鏡</text></g>
+  <g data-o="glv" style="cursor:pointer;opacity:${S.ppe.h ? .3 : 1}"><text x="190" y="82" font-size="38" text-anchor="middle">🧤</text><text x="190" y="98" fill="#e6ecf5" font-size="12" text-anchor="middle">防油污手套</text></g>
+  <!-- 駕駛座 -->
+  <rect x="700" y="14" width="284" height="90" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="712" y="34" fill="#9fb0cf" font-size="13">駕駛座</text>
+  <g data-o="acsw" style="cursor:pointer"><rect x="720" y="44" width="74" height="44" rx="8" fill="${S.ac ? '#1f5f3c' : '#2a3448'}" stroke="#ffb020" stroke-width="2"/><text x="757" y="72" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">A/C ${S.ac ? 'ON' : 'OFF'}</text></g>
+  <g data-o="key" style="cursor:pointer"><rect x="806" y="44" width="92" height="44" rx="8" fill="${S.eng ? '#5f3a1f' : '#2a3448'}" stroke="#ffb020" stroke-width="2"/><text x="852" y="72" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">🔑 ${S.eng ? '引擎運轉' : '熄火'}</text></g>
+  <text x="946" y="64" fill="#ffd23f" font-size="13" text-anchor="middle">外氣</text><text x="946" y="84" fill="#ffd23f" font-size="17" font-weight="700" text-anchor="middle">${S.amb}℃</text>
+  ${S.eng ? `<text x="500" y="606" fill="#ff9a4a" font-size="14" text-anchor="middle">⚙ 引擎運轉中：皮帶、風扇轉動</text>` : ''}
+  <!-- 檢修錶 -->
+  ${g(420, 130, gv('L'), 1500, 101, '#38c6ff', '低壓', 'gL')}${g(580, 130, gv('H'), 3500, 0, '#ff5d5d', '高壓', 'gH')}
+  <rect x="414" y="186" width="12" height="30" fill="#8ea3bf"/><rect x="574" y="186" width="12" height="30" fill="#8ea3bf"/>
+  <rect x="320" y="214" width="360" height="62" rx="12" fill="#4b5a72" stroke="#8ea3bf" stroke-width="2"/>
+  <circle cx="500" cy="244" r="15" fill="#9fd8ff" opacity=".7" stroke="#d8e2f0" stroke-width="2"/><text x="500" y="206" fill="#9fb0cf" font-size="12" text-anchor="middle">檢視窗 ↓</text>
+  ${knob(296, 'L', '#2f8fe0')}${knob(704, 'H', '#e04848')}
+  <rect x="350" y="312" width="300" height="22" rx="6" fill="#26324a" stroke="#2a3a5c"/><text x="344" y="327" fill="#9fb0cf" font-size="12" text-anchor="end">錶組固定座</text>
+  <!-- 中央軟管 -->
+  <path d="M500 276 C 500 340, 500 380, 500 430" fill="none" stroke="#e6c229" stroke-width="12" stroke-linecap="round"/><path d="M500 276 C 500 340, 500 380, 500 430" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="14 10"/>
+  <text x="500" y="452" fill="#e6c229" font-size="12" text-anchor="middle">中央軟管（未接設備，末端開放）</text>
+  ${hose('L', '#2f8fe0')}${hose('H', '#e04848')}
+  <!-- 車上管路與接口 -->
+  <line x1="60" y1="520" x2="440" y2="520" stroke="#26507e" stroke-width="24" stroke-linecap="round"/><line x1="560" y1="520" x2="940" y2="520" stroke="#8a3434" stroke-width="12" stroke-linecap="round"/>
+  <text x="70" y="560" fill="#38c6ff" font-size="14">低壓管（較粗）</text><text x="930" y="560" fill="#ff7070" font-size="14" text-anchor="end">高壓管（較細）</text>
+  <rect data-o="portL" x="236" y="470" width="28" height="44" fill="#8ea3bf" style="cursor:pointer"/><rect data-o="portH" x="740" y="478" width="20" height="36" fill="#8ea3bf" style="cursor:pointer"/>
+  <text x="250" y="590" fill="#9fb0cf" font-size="12" text-anchor="middle">L 接口</text><text x="750" y="590" fill="#9fb0cf" font-size="12" text-anchor="middle">H 接口</text>
+  ${cap('L')}${cap('H')}${cpl('L')}${cpl('H')}
+  ${S.hold ? `<text x="500" y="200" fill="#ffb020" font-size="16" font-weight="700" text-anchor="middle">手上拿著${S.hold === 'L' ? '藍色' : '紅色'}接頭 → 點要接的檢修接口</text>` : ''}
+  ${S.zoom ? bigGauge(S.zoom, gv(S.zoom)) : ''}
+  <g data-o="done" style="cursor:pointer"><rect x="840" y="400" width="140" height="44" rx="10" fill="#ffb020"/><text x="910" y="428" fill="#1a1200" font-size="16" font-weight="800" text-anchor="middle">完成作業 ✔</text></g>`;
+  // 側欄
+  $('#sMode').textContent = S.mode === 'exam' ? '檢定' : '練習'; $('#sScore').textContent = S.major ? 0 : score();
+  $('#sPpe').innerHTML = `🥽 ${S.ppe.g ? '✔' : '✘'}　🧤 ${S.ppe.h ? '✔' : '✘'}　引擎 ${S.eng ? '運轉' : '熄火'}　A/C ${S.ac ? 'ON' : 'OFF'}`;
+  $('#recCard').style.display = connected() && !S.rec && !S.end ? '' : 'none';
+  if (!S.end) { const nowI = STEPS.findIndex(([k]) => !S.done.has(k));
+    $('#steps').innerHTML = STEPS.map(([k, s], i) => `<li class="${S.done.has(k) ? 'done' : i === nowI && S.mode === 'practice' ? 'now' : ''}">${S.mode === 'exam' && !S.done.has(k) ? '＿＿＿＿＿＿' : esc(s)}</li>`).join(''); }
+  $('#log').innerHTML = S.log.join('');
+}
+$('#sv').addEventListener('click', e => { const t = e.target.closest('[data-o]'); const b = $('#sv').getBoundingClientRect(), x = (e.clientX - b.left) * 1000 / b.width, y = (e.clientY - b.top) * 1000 / b.width;
+  $('#menu').style.display = 'none'; if (t) act(t.dataset.o, x, y); else if (S && S.hold) act('none', x, y); });
+
+/* ===== 開始畫面 ===== */
+function setup() {
+  const CLS = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車三甲'], NG = Math.min(30, Math.max(1, +window.GROUP_COUNT || 11));
+  $('#setup').innerHTML = `<h3>開始</h3>
+    <div class="row">班級 <select id="cS">${CLS.map(c => `<option ${c === who.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+      組別 <input id="gS" type="number" min="1" max="30" value="${esc(who.grp || 1)}" style="width:64px">
+      操作者 <select id="oS">${[1, 2, 3].map(n => `<option ${String(n) === who.op ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="hint">組內每位同學都要各自通過檢定（操作者 1、2）。不輸入姓名。</div>
+    <div class="row"><button id="bP">🧪 練習模式（有提示）</button><button class="pri" id="bE">🎫 檢定模式（10 分鐘）</button></div>
+    <div class="hint">檢定：沒有提示；發生重大缺失立即不及格；80 分以上及格，成績上傳給老師。</div>`;
+  const go = mode => { who.cls = $('#cS').value; who.grp = String(Math.min(30, Math.max(1, Math.round(+$('#gS').value || 1)))); who.op = $('#oS').value;
+    store.set('act_cls', who.cls); store.set('act_grp', who.grp); store.set('p1_op', who.op);
+    $('#setup').innerHTML = `<h3>${esc(who.cls)} 第 ${esc(who.grp)} 組・操作者 ${esc(who.op)}</h3><div class="hint">點畫面上的物件（護具、開關、保護蓋、接口、手動閥、接頭、切斷閥）選擇動作。</div><div class="row"><button id="bR">↺ 重新開始</button></div>`;
+    $('#bR').onclick = () => location.reload(); fresh(mode); };
+  $('#bP').onclick = () => go('practice'); $('#bE').onclick = () => go('exam');
+}
+setup();
+/* 尚未開始時顯示的畫面 */
+S = null; $('#sv').innerHTML = '<rect width="1000" height="620" fill="#0d1526"/><text x="500" y="280" fill="#e6ecf5" font-size="30" font-weight="700" text-anchor="middle">冷媒檢修錶 連接與拆卸</text><text x="500" y="330" fill="#9fb0cf" font-size="18" text-anchor="middle">先在右側選擇班級、組別、操作者，再選練習或檢定</text>';
+$('#steps').innerHTML = STEPS.map(([k, s]) => `<li>${esc(s)}</li>`).join('');
+window.__S = () => S;
+</script></body></html>
