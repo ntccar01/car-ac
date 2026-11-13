@@ -1012,9 +1012,12 @@ const V4 = {
       captions: [[0, '看指針，讀出<b>壓力</b>和 R-134a 的<b>飽和溫度</b>（綠色刻度），選出正確答案。答對 4 題就能完成本段。', '看指針，讀出壓力和 R 134 a 的飽和溫度，也就是綠色刻度，選出正確答案。答對四題就能完成本段。']],
       enter(S) {
         S.ok = 0; S.qn = 0;
-        S.newQ = () => { const pool = T21.filter(([T, p]) => p <= 1450 && p >= 110), i = Math.floor(Math.random() * pool.length), [T, p] = pool[i];
-          const others = pool.filter((e, j) => Math.abs(j - i) >= 2).sort(() => Math.random() - .5).slice(0, 3);
-          S.q = { T, p, opts: [[T, p], ...others].sort(() => Math.random() - .5), done: false }; S.qn++; S.msg = ''; if (S.upd) S.upd(); };
+        S.newQ = () => {   // 選項＝{正確壓力, 鄰近壓力} × {正確溫度, 鄰近溫度}：每個壓力、每個溫度都出現兩次，只看其中一個猜不出來
+          const pool = T21.filter(([T, p]) => p <= 1450 && p >= 110), i = Math.floor(Math.random() * pool.length), [T, p] = pool[i];
+          const nb = () => { let j; do { j = i + (Math.random() < .5 ? -1 : 1) * (1 + Math.floor(Math.random() * 2)); } while (j < 0 || j >= pool.length); return pool[j]; };
+          const wT = nb()[0], wP = nb()[1];
+          const opts = [[T, p], [wT, p], [T, wP], [wT, wP]];
+          S.q = { T, p, opts: opts.sort(() => Math.random() - .5), done: false }; S.qn++; S.msg = ''; if (S.upd) S.upd(); };
         S.newQ();
       },
       panel(el, S) {
@@ -1023,9 +1026,10 @@ const V4 = {
         const g = id => el.querySelector('#' + id);
         S.upd = () => { const q = S.q; if (!q) return; g('ok').textContent = Math.min(4, S.ok); g('m').innerHTML = S.msg;
           g('ops').innerHTML = q.opts.map(([T, p], j) => `<button data-j="${j}" ${q.done ? 'disabled' : ''}>${p} kPa／${T}℃</button>`).join('');
-          g('ops').querySelectorAll('button').forEach(b => b.onclick = () => { const [T] = q.opts[+b.dataset.j]; q.done = true;
-            if (T === q.T) { S.ok++; S.msg = `<b style="color:#3ad07a">✔ 正確！</b> 課本表 2-1：${q.T}℃ ↔ ${q.p} kPa`; }
-            else S.msg = `<b style="color:#ff7070">✘ 再看一次</b>：指針在 ${q.p} kPa，綠圈對到 ${q.T}℃`; S.upd(); }); };
+          g('ops').querySelectorAll('button').forEach(b => b.onclick = () => { const [T, P] = q.opts[+b.dataset.j]; q.done = true;
+            const okT = T === q.T, okP = P === q.p;
+            if (okT && okP) { S.ok++; S.msg = `<b style="color:#3ad07a">✔ 正確！</b> 課本表 2-1：${q.p} kPa ↔ ${q.T}℃`; }
+            else S.msg = `<b style="color:#ff7070">✘ ${!okP && !okT ? '壓力和溫度都不對' : !okP ? '壓力讀錯了' : '溫度讀錯了'}</b>：指針在 ${q.p} kPa，綠圈對到 ${q.T}℃`; S.upd(); }); };
         g('nx').onclick = () => S.newQ(); S.upd();
       },
       draw(ctx, t, S) {
