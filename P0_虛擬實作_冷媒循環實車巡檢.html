@@ -25,7 +25,7 @@ select,input{font:inherit;font-size:14px;padding:4px 6px;border-radius:7px;borde
 #menu .t{font-size:13px;color:var(--mut);margin:0 4px 6px}#menu button{display:block;width:100%;text-align:left;margin:4px 0;font-size:15px}
 #alert{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;z-index:8}
 #alert .box{background:var(--panel);border:3px solid var(--bad);border-radius:16px;padding:20px 24px;max-width:560px;text-align:center}#alert h2{margin:0 0 8px;color:var(--bad)}#alert p{font-size:17px;line-height:1.6}
-#recCard .row input{width:76px}table.rec{width:100%;border-collapse:collapse;font-size:13px}table.rec th,table.rec td{border-bottom:1px solid var(--line);padding:3px 2px;text-align:center}table.rec input{width:62px}
+#recCard .row input{width:76px}.flowBox{background:#2a1d55;border:2px solid #8b5cf6;border-radius:10px;padding:8px 10px;color:#e6dcff;line-height:1.7}table.rec{width:100%;border-collapse:collapse;font-size:13px}table.rec th,table.rec td{border-bottom:1px solid var(--line);padding:3px 2px;text-align:center}table.rec input{width:62px}
 .ok{color:var(--ok)}.ng{color:var(--bad)}
 .result{font-size:15px;line-height:1.6}.result table{width:100%;border-collapse:collapse;font-size:14px}.result td{border-bottom:1px solid var(--line);padding:4px 6px;vertical-align:top}
 .pass{color:var(--ok);font-size:26px;font-weight:800}.fail{color:var(--bad);font-size:26px;font-weight:800}
@@ -42,7 +42,7 @@ select,input{font:inherit;font-size:14px;padding:4px 6px;border-radius:7px;borde
     <div class="card" id="setup"></div>
     <div class="card"><div class="stat"><span>模式：<b id="sMode">—</b></span><span>⏱ <b id="sTime">0:00</b></span><span>分數 <b id="sScore">100</b></span></div>
       <div class="row hint" id="sPpe"></div>
-      <div class="row"><button id="flowB" style="display:none">🔁 標示冷媒流向</button><button id="hintB" style="display:none">💡 提示</button></div>
+      <div class="row"><button id="flowB" style="display:none">➡️ 標示冷媒流向</button><button id="flowU" style="display:none">↩ 退一步</button><button id="hintB" style="display:none">💡 提示</button></div>
       <div id="hintMsg" style="color:#ffd23f;font-size:15px;font-weight:700"></div></div>
     <div class="card" id="stepCard"><h3 id="stepTitle">📋 工作單</h3><ol class="steps" id="steps"></ol></div>
     <div class="card" id="recCard" style="display:none"><h3>📝 巡檢紀錄表</h3>
@@ -100,7 +100,7 @@ const DED = {
 };
 const CAT = { 元件指認: ['idName', 'idFunc', 'idMiss'], 流向與管路: ['flow', 'seg'], 量測操作: ['ppe', 'far', 'touch', 'noMeas'], 紀錄判讀: ['gP', 'gT', 'rSide', 'rTemp', 'rState'], 提示: ['hint'] };
 const STEPS = [
-  ['ppe', '配戴護目鏡與手套'], ['ir', '拿起紅外線測溫儀'], ['id', '指認 5 個元件（名稱＋功能）'], ['flow', '按「標示冷媒流向」，從壓縮機依序點元件'],
+  ['ppe', '配戴護目鏡與手套'], ['ir', '拿起紅外線測溫儀'], ['id', '指認 5 個元件（名稱＋功能）'], ['flow', '按「➡️ 標示冷媒流向」：壓縮機自動標 ①，再順著管路依序點 ②③④⑤'],
   ['seg', '標示每一段管路是高壓側或低壓側'], ['gauge', '放大讀高、低壓錶，換算飽和溫度填入紀錄表'], ['meas', '量測 5 個量測點的管路溫度'],
   ['rec', '紀錄表：每一點的側別、實測溫度、冷媒狀態'], ['fin', '按「完成作業」'],
 ];
@@ -114,12 +114,12 @@ const WORK = [
 const WHY = {
   ppe: '巡檢時引擎和冷氣都在運轉，管路有高溫也有低溫，接頭附近可能噴出冷媒。', ir: '用測溫儀量管路溫度，比用手摸準確又安全。',
   id: '點車上的每個元件，先選名稱、再選功能。這台車可能是膨脹閥系統，也可能是毛細管系統，看清楚有沒有儲液器或蓄液器。',
-  flow: '冷媒從壓縮機出發：壓縮機 → 冷凝器 → …… 回到壓縮機。依照順序點元件。', seg: '壓縮機把壓力升高、膨脹閥（毛細管）把壓力降低，這兩個元件就是高低壓的分界。',
+  flow: '想像自己是冷媒：從壓縮機出發，順著管路走，經過的元件依序點下去。壓縮機已自動標 ①，你要點出 ②③④⑤（點錯可按「↩ 退一步」）。', seg: '壓縮機把壓力升高、膨脹閥（毛細管）把壓力降低，這兩個元件就是高低壓的分界。',
   gauge: '點檢修錶面放大，讀出壓力，再看同方向的綠色刻度就是飽和溫度。', meas: '測溫儀靠近管路（約 5 cm）量才準；靠近皮帶、風扇的點，要從側面避開。',
   rec: '把實測溫度和同一側的飽和溫度比較：高＝氣態、低＝液態、差不多＝霧狀。', fin: '全部填好、檢查過後，按「完成作業」。',
 };
 const HINT = {
-  ppe: '看看右側工具架上的護具。', ir: '工具架上還有一樣量測工具。', id: '還有元件沒有指認（點車上的元件）。', flow: '按右邊的「🔁 標示冷媒流向」，從壓縮機開始點。',
+  ppe: '看看右側工具架上的護具。', ir: '工具架上還有一樣量測工具。', id: '還有元件沒有指認（點車上的元件）。', flow: '按右邊的「➡️ 標示冷媒流向」，再順著壓縮機出口的管路找下一個元件。',
   seg: '還有管路沒有標示高壓或低壓（點管路）。', gauge: '點右上角檢修錶的錶面放大來讀。', meas: '還有黃色量測點沒有量（拿著測溫儀點它）。', rec: '紀錄表還有欄位沒填。', fin: '都完成了嗎？檢查後按「完成作業」。',
 };
 
@@ -166,16 +166,20 @@ function menu(x, y, title, items) {
   m.querySelectorAll('button').forEach(b => b.onclick = e => { e.stopPropagation(); m.style.display = 'none'; if (b.dataset.i !== 'x') { items[+b.dataset.i][1](); after(); } });
 }
 function after() { checkSteps(); if (S.hintMsg && S.hintStep !== nextStep()?.[0]) S.hintMsg = ''; S.hintStep = nextStep()?.[0]; render(); }
+const CIRC = ['①', '②', '③', '④', '⑤'];
+const nm = c => S.ans[c] ? `「${S.ans[c].n}」` : (c === 'comp' ? '「壓縮機」' : '上一個元件');
 const compsOf = () => S.sys === 'txv' ? ['comp', 'cond', 'rec', 'txv', 'evap'] : ['comp', 'cond', 'ori', 'evap', 'acc'];
 
 function act(obj, x, y) {
   if (!S || S.end) return; S.lastAct = Date.now(); S.nudged = false; S.flash = 0;
   if (obj === 'zoomX') { S.zoom = null; return render(); }
   if (obj === 'gL' || obj === 'gH') { S.zoom = obj.slice(1); return render(); }
-  if (S.flowMode && obj.startsWith('c:')) { const c = obj.slice(2);
-    if (S.flow.includes(c)) { log('這個元件已經點過了。'); return render(); }
-    S.flow.push(c); log(`流向第 ${S.flow.length} 站：${S.ans[c] ? S.ans[c].n : '（尚未指認的元件）'}`);
-    if (S.flow.length >= 5) { S.flowMode = false; log('冷媒流向標示完成。', 'g'); } return after(); }
+  if (S.flowMode && obj.startsWith('d:')) { log('標示流向只點冷媒循環的元件。'); return render(); }
+  if (S.flowMode && obj.startsWith('c:')) { const c = obj.slice(2), prev = S.flow[S.flow.length - 1];
+    if (S.flow.includes(c)) { log('這個元件已經標過號碼了。點錯可按「↩ 退一步」。'); return render(); }
+    if (S.mode === 'guide' && FLOW[S.sys][S.flow.length] !== c) { log(`✘ 冷媒從${nm(prev)}出來，不會先流到這裡。順著${nm(prev)}出口的管路看看。`, 'd'); return render(); }
+    S.flow.push(c); log(`流向 ${CIRC[S.flow.length - 1]}：${nm(c)}`);
+    if (S.flow.length >= 5) { S.flowMode = false; log('✔ 冷媒流向標示完成（⑤ 之後冷媒回到壓縮機）。', 'g'); } return after(); }
   if (obj === 'gog') return menu(x, y, '護目鏡', [['配戴護目鏡', () => { S.ppe.g = true; log('配戴護目鏡。', 'g'); }]]);
   if (obj === 'glv') return menu(x, y, '手套', [['配戴手套', () => { S.ppe.h = true; log('配戴手套。', 'g'); }]]);
   if (obj === 'irT') return menu(x, y, '紅外線測溫儀', [[S.ir ? '放回工具架' : '拿起測溫儀', () => { S.ir = !S.ir; log(S.ir ? '拿起紅外線測溫儀。' : '放回測溫儀。'); }]]);
@@ -304,7 +308,9 @@ $('#hintB').onclick = () => {
   if (S.mode === 'exam') { if (S.hints >= HINT_MAX) return; S.hints++; S.ded['hint|第 ' + S.hints + ' 次'] = DED.hint[1]; log(`扣分 −5：使用提示卡（第 ${S.hints} 次）`, 'd'); } else S.hints++;
   S.hintMsg = HINT[n[0]]; S.lastAct = Date.now(); S.nudged = false; log('💡 提示：' + HINT[n[0]]); render();
 };
-$('#flowB').onclick = () => { if (!S || S.end) return; S.lastAct = Date.now(); if (S.flowMode || S.flow.length) { S.flow = []; S.flowMode = true; log('重新標示冷媒流向：從壓縮機開始依序點元件。'); } else { S.flowMode = true; log('開始標示冷媒流向：從壓縮機開始依序點元件。'); } after(); };
+$('#flowB').onclick = () => { if (!S || S.end) return; S.lastAct = Date.now(); S.flow = ['comp']; S.flowMode = true;
+  log('開始標示冷媒流向：壓縮機已標為 ①（起點）。順著壓縮機出口的管路，點冷媒接著流到的元件。'); after(); };
+$('#flowU').onclick = () => { if (!S || S.end || S.flow.length <= 1) return; S.lastAct = Date.now(); const c = S.flow.pop(); S.flowMode = true; log(`↩ 退一步：取消 ${CIRC[S.flow.length]}。`); after(); };
 
 /* ===== 放大錶（低壓含真空；兩錶都有綠色 R-134a 飽和溫度圈） ===== */
 function bigGauge(sd, v) {
@@ -335,7 +341,7 @@ function render() {
   if (!S) return;
   const sys = S.sys, segs = SEGS[sys], pts = PTS[sys], gv = S.gv || [S.PH, S.PL];
   const mark = k => S.segMark[k] === 'H' ? '#d24a4a' : S.segMark[k] === 'L' ? '#3a7fd0' : '#8a98ad';
-  const lbl = c => { const a = S.ans[c], fi = S.flow.indexOf(c); return (a ? a.n : '') + (fi >= 0 ? `　#${fi + 1}` : ''); };
+  const lbl = c => { const a = S.ans[c], fi = S.flow.indexOf(c); return a ? a.n : ''; };
   // 名稱標籤：另外畫在最上層、不擋點擊，位置逐一避開管路與量測點
   const LBLPOS = { comp: [175, 246], cond: [255, 26], rec: [450, 152], txv: [445, 343], ori: [451, 336], acc: [300, 460], evap: [470, 558] };
   let labels = '';
@@ -383,15 +389,18 @@ function render() {
     svg += `<g data-o="p:${id}" style="cursor:pointer"><circle cx="${P.x}" cy="${P.y}" r="15" fill="${m !== undefined ? '#2f6b4a' : '#ffb020'}" stroke="#1a1200" stroke-width="2"/><text x="${P.x}" y="${P.y + 6}" font-size="16" font-weight="800" text-anchor="middle" fill="${m !== undefined ? '#fff' : '#1a1200'}">${i + 1}</text>
       ${m !== undefined ? `<rect x="${P.x + 16}" y="${P.y - 30}" width="66" height="22" rx="5" fill="#0b1424" stroke="#ffd23f"/><text x="${P.x + 49}" y="${P.y - 14}" fill="#ffd23f" font-size="13" font-weight="700" text-anchor="middle">${m.toFixed(1)}℃</text>` : ''}</g>`; });
   svg += labels;
+  const BADGE = { comp: [70, 240], cond: [140, 46], rec: [650, 60], txv: [652, 355], ori: [650, 348], acc: [320, 388], evap: [600, 538] };
+  S.flow.forEach((c, i) => { const [bx, by] = BADGE[c]; svg += `<g pointer-events="none"><rect x="${bx - 34}" y="${by - 14}" width="68" height="28" rx="14" fill="#8b5cf6" stroke="#fff" stroke-width="2"/><text x="${bx}" y="${by + 6}" font-size="16" font-weight="900" text-anchor="middle" fill="#fff">流向${CIRC[i]}</text></g>`; });
   svg += `<g data-o="done" style="cursor:pointer"><rect x="820" y="520" width="150" height="50" rx="10" fill="#ffb020"/><text x="895" y="551" fill="#1a1200" font-size="17" font-weight="800" text-anchor="middle">完成作業 ✔</text></g>`;
-  if (S.flowMode) svg += `<rect x="190" y="160" width="330" height="34" rx="8" fill="#ffd23f"/><text x="355" y="183" fill="#1a1200" font-size="15" font-weight="800" text-anchor="middle">標示流向中：從壓縮機起依序點元件（${S.flow.length}/5）</text>`;
+  if (S.flowMode) svg += `<g pointer-events="none"><rect x="40" y="552" width="390" height="34" rx="8" fill="#8b5cf6"/><text x="235" y="575" fill="#fff" font-size="15" font-weight="800" text-anchor="middle">➡️ 標示流向中：點冷媒接著流到的元件（${S.flow.length}/5）</text></g>`;
   if (S.zoom) svg += bigGauge(S.zoom, S.zoom === 'L' ? gv[1] : gv[0]);
   $('#sv').innerHTML = svg; renderSide();
 }
 function renderSide() {
   $('#sMode').textContent = MODE[S.mode]; $('#sScore').textContent = S.major ? 0 : score();
   const hb = $('#hintB'); hb.style.display = S.mode === 'guide' || S.end ? 'none' : ''; hb.disabled = S.mode === 'exam' && S.hints >= HINT_MAX; hb.textContent = S.mode === 'exam' ? `💡 提示（−5 分，剩 ${HINT_MAX - S.hints} 次）` : '💡 提示（練習不扣分）';
-  const fb = $('#flowB'); fb.style.display = S.end ? 'none' : ''; fb.className = S.flowMode ? 'on' : ''; fb.textContent = S.flowMode ? `🔁 標示流向中（${S.flow.length}/5）` : S.flow.length ? '🔁 重新標示冷媒流向' : '🔁 標示冷媒流向';
+  const fb = $('#flowB'); fb.style.display = S.end ? 'none' : ''; fb.className = S.flowMode ? 'on' : ''; fb.textContent = S.flow.length ? '🔁 重新標示流向' : '➡️ 標示冷媒流向';
+  $('#flowU').style.display = !S.end && S.flowMode && S.flow.length > 1 ? '' : 'none';
   $('#sPpe').innerHTML = `🥽 ${S.ppe.g ? '✔' : '✘'}　🧤 ${S.ppe.h ? '✔' : '✘'}　🌡 ${S.ir ? '手上' : '未拿'}　外氣 ${S.amb}℃`;
   if (!S.end) {
     if (S.mode === 'guide') { const nowI = STEPS.findIndex(([k]) => !S.done.has(k)); $('#stepTitle').textContent = '作業程序（導引）';
@@ -399,7 +408,8 @@ function renderSide() {
     else { const w = curWork(); $('#stepTitle').textContent = '📋 工作單';
       $('#steps').innerHTML = WORK.map((x, i) => `<li class="wk ${x.k.every(k => S.done.has(k)) ? 'done' : i === w ? 'now' : ''}"><b>${esc(x.t)}</b>${x.k.every(k => S.done.has(k)) ? ' ✔' : ''}<br><span class="hint">${esc(x.d)}</span></li>`).join(''); }
   }
-  $('#hintMsg').innerHTML = S.hintMsg && !S.end ? '💡 ' + esc(S.hintMsg) : '';
+  $('#hintMsg').innerHTML = S.flowMode && !S.end ? `<div class="flowBox"><b>➡️ 標示冷媒流向（${S.flow.length}/5）</b><br>${S.flow.map((c, i) => CIRC[i] + ' ' + esc(S.ans[c] ? S.ans[c].n : c === 'comp' ? '壓縮機' : '（未指認）')).join(' → ')} → <b>${CIRC[S.flow.length]} ？</b><br>下一步：順著${esc(nm(S.flow[S.flow.length - 1]))}<b>出口</b>的管路，點冷媒接著流到的元件。</div>`
+    : S.hintMsg && !S.end ? '💡 ' + esc(S.hintMsg) : '';
   $('#log').innerHTML = S.log.join('');
 }
 $('#sv').addEventListener('click', e => { const t = e.target.closest('[data-o]'), b = $('#sv').getBoundingClientRect(), x = (e.clientX - b.left) * 1000 / b.width, y = (e.clientY - b.top) * 1000 / b.width;
