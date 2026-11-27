@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Q4 第4次隨堂測驗｜車輛空調檢修實習</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;line-height:1.6}
+.wrap{max-width:860px;margin:0 auto;padding:14px 16px 60px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home:hover{border-color:var(--acc);color:var(--acc)}
+.tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:14px}
+header h1{font-size:22px;margin:0}
+.sub{color:var(--mut);font-size:14px;width:100%;margin-top:-4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:20px;color:var(--acc)}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 16px}
+.pill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:14px;color:var(--mut)}
+.pill b{color:var(--ink)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.field label{display:block;font-size:15px;color:var(--mut);margin-bottom:6px;font-weight:700}
+.field select,.field input{width:100%;background:#0a1120;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:17px;font-family:inherit}
+.field select:focus,.field input:focus{outline:none;border-color:var(--acc2)}
+.field .custom{margin-top:8px;display:none}
+.field .custom.show{display:block}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 18px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none}
+.btn:hover{border-color:var(--acc2)}
+.btn.pri{background:var(--acc);color:#1a1200;border:none}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.ok{background:var(--ok);color:#002010;border:none}
+.btn.big{width:100%;padding:14px;font-size:19px}
+.err-msg{color:#ffb3b3;background:#4a1d1d;border:1px solid var(--bad);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:15px;display:none}
+.err-msg.show{display:block}
+.live-wait{background:#122a3a;border:1px solid var(--acc2);border-radius:12px;padding:14px 16px;margin-top:12px;text-align:center;color:#d6ecff;font-size:17px;display:none}
+.live-wait.show{display:block}
+
+/* Sticky quiz bar */
+.topbar{position:sticky;top:0;z-index:30;background:rgba(13,21,38,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 0 12px;margin:0 -16px 14px;padding-left:16px;padding-right:16px}
+.top-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px}
+.who-badge{background:var(--panel2);border:1px solid var(--acc);color:var(--acc);border-radius:8px;padding:3px 10px;font-weight:700}
+.timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--acc2);font-weight:700;font-size:16px}
+.pbar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:8px 0}
+.pbar i{display:block;height:100%;background:var(--acc2);width:0;transition:width .25s}
+.navgrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.navdot{width:32px;height:30px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--mut);font-size:14px;font-weight:700;cursor:pointer;display:grid;place-items:center;font-family:inherit}
+.navdot.ans{background:#143a27;border-color:var(--ok);color:var(--ok)}
+.navdot.miss{border-color:var(--acc);color:var(--acc);animation:pulse 1s 2}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+/* Question cards */
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;scroll-margin-top:135px}
+.qcard.unanswered{border-color:var(--acc);box-shadow:0 0 0 2px rgba(255,176,32,.25)}
+.qcard.res-ok{border-color:var(--ok)}
+.qcard.res-bad{border-color:var(--bad)}
+.qhead{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.qnum{background:var(--acc);color:#1a1200;font-weight:800;border-radius:6px;padding:2px 8px;font-size:14px;flex:none}
+.qpts{margin-left:auto;font-size:13px;color:var(--mut);flex:none}
+.qtext{font-size:18px;font-weight:700;margin:0}
+.qsvg{margin:10px 0;text-align:center}
+.qsvg svg{max-width:100%;height:auto;border-radius:10px;background:#0a1120;border:1px solid var(--line)}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.opt{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:11px 14px;font-size:16px;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--acc2)}
+.opt.sel{background:#173252;border-color:var(--acc2)}
+.opt .lbl{flex:none;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;font-size:14px;font-weight:700}
+.opt.sel .lbl{background:var(--acc2);color:#041826}
+.opt.right{background:#143a27;border-color:var(--ok);cursor:default}
+.opt.right .lbl{background:var(--ok);color:#002010}
+.opt.wrong{background:#4a1d1d;border-color:var(--bad);cursor:default}
+.opt.wrong .lbl{background:var(--bad);color:#fff}
+.opt .mark{margin-left:auto;font-size:13px;font-weight:700;flex:none;padding-left:8px}
+.exp{margin-top:12px;padding:10px 14px;border-radius:10px;background:#102238;border-left:4px solid var(--acc2);font-size:15px;color:#d6ecff}
+.exp b{color:var(--acc)}
+
+/* Result summary */
+.score-hero{text-align:center;padding:22px 16px}
+.score-num{font-size:56px;font-weight:900;color:var(--acc);line-height:1.1}
+.score-sub{font-size:18px;color:var(--mut);margin-top:6px}
+.badge{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:800;font-size:16px;margin-top:10px}
+.badge.pass{background:#143a27;color:var(--ok);border:1px solid var(--ok)}
+.badge.fail{background:#4a1d1d;color:#ffb3b3;border:1px solid var(--bad)}
+.upload-box{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--panel2);font-size:15px;display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.filter-bar button.on{background:var(--acc);color:#1a1200;border-color:var(--acc)}
+.act-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.hide{display:none!important}
+</style></head><body>
+<script src="firebase-config.js"></script><script src="score.js"></script>
+<script>
+/* 車輛空調檢修實習：內建隨堂測驗引擎（個人班級＋座號、全部作答完交卷算分＋解析、同步教師大螢幕） */
+function QuizApp(cfg) {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const PASS = cfg.pass || 60;
+  const MAX_SEAT = 40;
+  const classes = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車301', '汽車302'];
+
+  const state = {
+    cls: '', seat: 0, items: [], answers: {}, startAt: 0, timer: null, elapsed: 0, submitted: false, lastRec: null, liveState: null
+  };
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildShell() {
+    document.body.innerHTML = `<div class="wrap">
+      <header>
+        <a class="home" href="index.html">🏠 首頁</a>
+        <span class="tag">${esc(cfg.badge || '隨堂測驗')}</span>
+        <h1>${esc(cfg.title)}</h1>
+        ${cfg.sub ? `<div class="sub">${esc(cfg.sub)}</div>` : ''}
+      </header>
+      <div id="view"></div>
+    </div>`;
+  }
+
+  function renderStart() {
+    const savedCls = localStorage.getItem('ac_quiz_cls') || classes[0];
+    const savedSeat = localStorage.getItem('ac_quiz_seat') || '';
+    const isCustomCls = savedCls && !classes.includes(savedCls);
+    const isCustomSeat = savedSeat && (+savedSeat < 1 || +savedSeat > MAX_SEAT);
+    const totalPts = cfg.questions.reduce((s, q) => s + (q.pts || 10), 0);
+
+    $('#view').innerHTML = `<div class="card">
+      <h2>📝 測驗說明</h2>
+      <div class="meta-row">
+        <span class="pill">題數：<b>${cfg.questions.length} 題</b></span>
+        <span class="pill">滿分：<b>${totalPts} 分</b></span>
+        <span class="pill">及格標準：<b>${PASS} 分</b></span>
+        <span class="pill">模式：<b>全部寫完交卷算分＋解析</b></span>
+      </div>
+      <p style="color:var(--mut);margin:0 0 12px">本測驗為<b>個人作答</b>（不記姓名，只記班級與座號）。交卷後成績自動上傳教師大螢幕，並立即顯示每題正解與解析。</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="qCls">班級</label>
+          <select id="qCls">
+            ${classes.map(c => `<option value="${esc(c)}"${!isCustomCls && savedCls === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+            <option value="__custom__"${isCustomCls ? ' selected' : ''}>✏️ 手動輸入班級</option>
+          </select>
+          <input id="qClsCustom" class="custom${isCustomCls ? ' show' : ''}" type="text" maxlength="20" placeholder="請輸入班級（例如：汽車303）" value="${isCustomCls ? esc(savedCls) : ''}">
+        </div>
+        <div class="field">
+          <label for="qSeat">個人座號</label>
+          <select id="qSeat">
+            <option value="">— 請選擇座號 —</option>
+            ${Array.from({ length: MAX_SEAT }, (_, i) => i + 1).map(n => `<option value="${n}"${!isCustomSeat && +savedSeat === n ? ' selected' : ''}>${n} 號</option>`).join('')}
+            <option value="__custom__"${isCustomSeat ? ' selected' : ''}>✏️ 手動輸入座號</option>
+          </select>
+          <input id="qSeatCustom" class="custom${isCustomSeat ? ' show' : ''}" type="number" min="1" max="99" placeholder="請輸入座號（1～99）" value="${isCustomSeat ? esc(savedSeat) : ''}">
+        </div>
+      </div>
+      <div id="startErr" class="err-msg"></div>
+      <button id="btnStart" class="btn pri big">▶ 開始測驗</button>
+      <div id="liveWait" class="live-wait"></div>
+    </div>`;
+
+    $('#qCls').onchange = () => {
+      const show = $('#qCls').value === '__custom__';
+      $('#qClsCustom').classList.toggle('show', show);
+      if (show) $('#qClsCustom').focus();
+    };
+    $('#qSeat').onchange = () => {
+      const show = $('#qSeat').value === '__custom__';
+      $('#qSeatCustom').classList.toggle('show', show);
+      if (show) $('#qSeatCustom').focus();
+    };
+    $('#btnStart').onclick = () => {
+      const cls = ($('#qCls').value === '__custom__' ? $('#qClsCustom').value : $('#qCls').value).trim();
+      const seatRaw = ($('#qSeat').value === '__custom__' ? $('#qSeatCustom').value : $('#qSeat').value).trim();
+      const seat = parseInt(seatRaw, 10);
+      const err = $('#startErr');
+      if (!cls) { err.textContent = '請選擇或輸入班級。'; err.classList.add('show'); return; }
+      if (!seat || seat < 1 || seat > 99) { err.textContent = '請選擇或輸入正確的個人座號（1～99）。'; err.classList.add('show'); return; }
+      err.classList.remove('show');
+      try { localStorage.setItem('ac_quiz_cls', cls); localStorage.setItem('ac_quiz_seat', String(seat)); } catch (e) { }
+      state.cls = cls; state.seat = seat;
+      startQuiz();
+    };
+
+    if (window.Score && Score.watchLive) {
+      Score.watchLive(cfg.code, d => {
+        state.liveState = d;
+        const box = $('#liveWait');
+        if (!box) return;
+        if (d && d.state === 'ready') {
+          box.textContent = `🔔 老師已開啟全班同步測驗（準備中${d.cls ? '：' + d.cls : ''}），請先選好班級與座號等待開始！`;
+          box.classList.add('show');
+        } else if (d && d.state === 'go') {
+          box.textContent = '🚀 全班同步測驗已開始！請按上方「開始測驗」。';
+          box.classList.add('show');
+        } else {
+          box.classList.remove('show');
+        }
+      });
+    }
+  }
+
+  function startQuiz() {
+    state.submitted = false;
+    state.answers = {};
+    // 保留原題目順序（或依設定洗牌），選項預設洗牌讓鄰座順序不同
+    const base = cfg.questions.map((q, idx) => {
+      const pts = q.pts || 10;
+      const optList = q.o.map((text, oi) => ({ text, isAns: oi === q.a }));
+      const opts = q.noShuffle ? optList : shuffle(optList);
+      return {
+        idx,
+        tag: q.tag || `Q${idx + 1}`,
+        q: q.q,
+        svg: q.svg || '',
+        exp: q.exp || '',
+        pts,
+        opts
+      };
+    });
+    state.items = cfg.shuffleQuestions ? shuffle(base) : base;
+    state.startAt = Date.now();
+    state.elapsed = 0;
+    if (state.timer) clearInterval(state.timer);
+    renderQuiz();
+    state.timer = setInterval(() => {
+      state.elapsed = Math.floor((Date.now() - state.startAt) / 1000);
+      const t = $('#qTimer');
+      if (t) t.textContent = '⏱ ' + fmt(state.elapsed);
+    }, 500);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderQuiz() {
+    const n = state.items.length;
+    $('#view').innerHTML = `
+      <div class="topbar">
+        <div class="top-info">
+          <span class="who-badge">${esc(state.cls)} ${state.seat} 號</span>
+          <span id="qProg">已答 0 / ${n} 題</span>
+          <span id="qTimer" class="timer">⏱ 0:00</span>
+        </div>
+        <div class="pbar"><i id="qBar"></i></div>
+        <div class="navgrid" id="qNav">
+          ${state.items.map((_, i) => `<button type="button" class="navdot" data-jump="${i}">${i + 1}</button>`).join('')}
+        </div>
+      </div>
+      <div id="qList">
+        ${state.items.map((it, i) => `
+          <div class="qcard" id="qc_${i}">
+            <div class="qhead">
+              <span class="qnum">第 ${i + 1} 題</span>
+              <span class="qpts">${it.pts} 分</span>
+            </div>
+            <p class="qtext">${esc(it.q)}</p>
+            ${it.svg ? `<div class="qsvg">${it.svg}</div>` : ''}
+            <div class="opts">
+              ${it.opts.map((o, oi) => `
+                <button type="button" class="opt" data-q="${i}" data-o="${oi}">
+                  <span class="lbl">${LETTERS[oi]}</span>
+                  <span>${esc(o.text)}</span>
+                </button>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div id="subErr" class="err-msg"></div>
+      <div class="card" style="text-align:center">
+        <p style="color:var(--mut);margin:0 0 12px">確認所有題目都已作答後，按下交卷即可立即算分與查看解析。</p>
+        <button id="btnSubmit" class="btn ok big">📮 交卷算分</button>
+      </div>`;
+
+    $('#qNav').onclick = e => {
+      const b = e.target.closest('[data-jump]');
+      if (!b) return;
+      const el = $(`#qc_${b.dataset.jump}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    $('#qList').onclick = e => {
+      const b = e.target.closest('.opt');
+      if (!b || state.submitted) return;
+      const qi = +b.dataset.q, oi = +b.dataset.o;
+      state.answers[qi] = oi;
+      const card = $(`#qc_${qi}`);
+      card.classList.remove('unanswered');
+      card.querySelectorAll('.opt').forEach((el, idx) => el.classList.toggle('sel', idx === oi));
+      const dot = $(`.navdot[data-jump="${qi}"]`);
+      if (dot) { dot.classList.add('ans'); dot.classList.remove('miss'); }
+      updateProgress();
+    };
+
+    $('#btnSubmit').onclick = handleSubmit;
+  }
+
+  function updateProgress() {
+    const n = state.items.length, done = Object.keys(state.answers).length;
+    $('#qProg').textContent = `已答 ${done} / ${n} 題`;
+    $('#qBar').style.width = Math.round(done / n * 100) + '%';
+    if (done === n) $('#subErr').classList.remove('show');
+  }
+
+  function handleSubmit() {
+    const missing = [];
+    state.items.forEach((_, i) => {
+      const miss = state.answers[i] === undefined;
+      $(`#qc_${i}`).classList.toggle('unanswered', miss);
+      const dot = $(`.navdot[data-jump="${i}"]`);
+      if (dot) dot.classList.toggle('miss', miss);
+      if (miss) missing.push(i + 1);
+    });
+    if (missing.length) {
+      const err = $('#subErr');
+      err.textContent = `還有 ${missing.length} 題尚未作答（第 ${missing.join('、')} 題），請先全部完成再交卷！`;
+      err.classList.add('show');
+      $(`#qc_${missing[0] - 1}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (!confirm('確定要交卷嗎？交卷後將立即算分並上傳成績。')) return;
+    finishQuiz();
+  }
+
+  function finishQuiz() {
+    state.submitted = true;
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+    state.elapsed = Math.max(1, Math.floor((Date.now() - state.startAt) / 1000));
+
+    let score = 0, total = 0, rightCnt = 0;
+    const detail = [];
+    state.items.forEach((it, i) => {
+      const pick = state.answers[i];
+      const ok = !!(it.opts[pick] && it.opts[pick].isAns);
+      total += it.pts;
+      if (ok) { score += it.pts; rightCnt++; }
+      detail.push({ round: it.tag, got: ok ? 1 : 0, of: 1 });
+    });
+    const pct = total ? Math.round(score / total * 100) : 0;
+    const rec = {
+      lesson: cfg.code,
+      title: cfg.title,
+      cls: state.cls,
+      grp: state.seat,
+      score,
+      total,
+      pct,
+      sec: state.elapsed,
+      detail,
+      at: new Date().toISOString()
+    };
+    state.lastRec = rec;
+    renderResult(rec, rightCnt);
+    uploadScore(rec);
+  }
+
+  function uploadScore(rec) {
+    const box = $('#uploadStatus');
+    if (!window.Score || !Score.submit) {
+      if (box) box.innerHTML = '⚠️ 離線模式（成績已暫存本機）';
+      return;
+    }
+    if (box) box.innerHTML = '⏳ 正在上傳成績至教師大螢幕…';
+    Score.submit(rec).then(r => {
+      if (!box) return;
+      if (r && r.ok) {
+        box.innerHTML = '✅ <b>成績已上傳至教師大螢幕！</b>';
+      } else {
+        box.innerHTML = `⚠️ 成績上傳失敗（${esc((r && r.err) || '網路異常')}） <button type="button" class="btn" id="btnRetry" style="padding:4px 10px;font-size:14px">重試上傳</button>`;
+        const rb = $('#btnRetry');
+        if (rb) rb.onclick = () => uploadScore(rec);
+      }
+    });
+  }
+
+  function renderResult(rec, rightCnt) {
+    const n = state.items.length, wrongCnt = n - rightCnt, passed = rec.pct >= PASS;
+    $('#view').innerHTML = `
+      <div class="card score-hero">
+        <div style="color:var(--mut);font-size:16px">${esc(state.cls)} <b>${state.seat} 號</b>｜${esc(cfg.title)}</div>
+        <div class="score-num">${rec.score} <span style="font-size:24px;color:var(--mut)">/ ${rec.total} 分</span></div>
+        <div class="score-sub">答對 <b>${rightCnt}</b> / ${n} 題（正確率 ${rec.pct}%）　｜　用時 ${fmt(rec.sec)}</div>
+        <div><span class="badge ${passed ? 'pass' : 'fail'}">${passed ? '🎉 測驗通過' : `💪 未達 ${PASS} 分，建議看解析後再練一次`}</span></div>
+        <div class="upload-box" id="uploadStatus">⏳ 準備上傳成績…</div>
+        <div class="act-row">
+          <button type="button" class="btn pri" id="btnAgain">🔄 重新測驗</button>
+          <a class="btn" href="index.html">🏠 回課程首頁</a>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <button type="button" class="btn on" id="fAll">顯示全部（${n}）</button>
+        <button type="button" class="btn" id="fWrong">只看錯題（${wrongCnt}）</button>
+      </div>
+      <div id="revList">
+        ${state.items.map((it, i) => {
+          const pick = state.answers[i];
+          const ok = !!(it.opts[pick] && it.opts[pick].isAns);
+          return `<div class="qcard ${ok ? 'res-ok' : 'res-bad'}" data-ok="${ok ? '1' : '0'}">
+            <div class="qhead">
+              <span class="qnum" style="background:${ok ? 'var(--ok)' : 'var(--bad)'};color:${ok ? '#002010' : '#fff'}">${ok ? '✓' : '✗'} 第 ${i + 1} 題</span>
+              <span class="qpts">${ok ? '+' + it.pts : '0'} / ${it.pts} 分</span>
+            </div>
+            <p class="qtext">${esc(it.q)}</p>
+            ${it.svg ? `<div class="qsvg">${it.svg}</div>` : ''}
+            <div class="opts">
+              ${it.opts.map((o, oi) => {
+                const isPick = oi === pick;
+                const cls = o.isAns ? 'right' : (isPick ? 'wrong' : '');
+                const mark = o.isAns ? (isPick ? '✅ 你的答案（正確）' : '✅ 正確答案') : (isPick ? '❌ 你的答案' : '');
+                return `<div class="opt ${cls}">
+                  <span class="lbl">${LETTERS[oi]}</span>
+                  <span>${esc(o.text)}</span>
+                  ${mark ? `<span class="mark">${mark}</span>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+            ${it.exp ? `<div class="exp"><b>💡 解析：</b>${esc(it.exp)}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+
+    $('#fAll').onclick = () => {
+      $('#fAll').classList.add('on'); $('#fWrong').classList.remove('on');
+      document.querySelectorAll('#revList .qcard').forEach(el => el.classList.remove('hide'));
+    };
+    $('#fWrong').onclick = () => {
+      $('#fWrong').classList.add('on'); $('#fAll').classList.remove('on');
+      document.querySelectorAll('#revList .qcard').forEach(el => el.classList.toggle('hide', el.dataset.ok === '1'));
+    };
+    $('#btnAgain').onclick = () => renderStart();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  buildShell();
+  renderStart();
+}
+
+// 第 4 次隨堂測驗：驅動皮帶與冷媒管路（AC-Q4）
+const Q4 = {
+  code: 'AC-Q4',
+  badge: '第 4 次隨堂測驗',
+  title: '驅動皮帶與冷媒管路拆裝',
+  sub: '對應範圍：課本 3-1、3-2（p56–68）｜動畫 V6',
+  pass: 60,
+  questions: [
+    {
+      tag: 'Q1 多肋式皮帶優點',
+      q: '現代小型車多採用單一條「多肋式 V 型蛇繞皮帶」取代傳統多條 V 型三角皮帶，下列敘述何者「錯誤」？',
+      o: [
+        '只能由肋條面傳遞動力，背面完全無法接觸惰輪',
+        '接觸面積與摩擦力較大，傳動功率多約 30%',
+        '厚度較薄具柔軟性，傳動空間可縮小約 25%',
+        '可搭配自動張力調整器，縮短引擎總長度'
+      ],
+      a: 0,
+      exp: '多肋式 V 型皮帶的一大優點就是「皮帶背面也能傳遞動力（如驅動光滑面水泵或惰輪）」並可使用自動張力調整器。'
+    },
+    {
+      tag: 'Q2 PK 型號解碼',
+      q: '小型車常用的驅動皮帶型號標示為「6PK1210」，其中「6」與「1210」分別代表什麼？（PK 節距 P = 3.56 mm）',
+      o: [
+        '6 條肋條（溝槽數）、有效長度 1210 mm',
+        '皮帶寬度 6 mm、最大張力 1210 N',
+        '皮帶厚度 6 mm、適用 1210 c.c. 引擎',
+        '6 個皮帶盤、使用里程 1210 公里'
+      ],
+      a: 0,
+      exp: '型號由肋條數（6）＋級別（PK，節距 3.56 mm）＋有效長度（1210 mm）組成；皮帶總寬度約 6 × 3.56 ＝ 21.36 mm。'
+    },
+    {
+      tag: 'Q3 拆皮帶前安全',
+      q: '拆卸冷媒壓縮機驅動皮帶前，下列哪一項準備工作「正確」？',
+      o: [
+        '拆開電瓶負極線、拍照或繪圖記錄盤繞路徑，並標記皮帶原旋轉方向',
+        '拆下皮帶後發動引擎 5 分鐘，確認壓縮機有無異音',
+        '在皮帶溝槽噴灑潤滑油以利拆卸',
+        '直接切斷舊皮帶，不需要記盤繞路徑'
+      ],
+      a: 0,
+      exp: '拆前應拆電瓶負極防誤發動、記錄盤繞路徑並標記原方向；皮帶不可沾染油脂，且若同時驅動水泵，拆下後嚴禁發動引擎。'
+    },
+    {
+      tag: 'Q4 皮帶磨耗診斷',
+      q: '目視檢查驅動皮帶時，發現「皮帶側邊有異常磨耗或起毛邊」，應進一步檢查哪個項目？',
+      o: [
+        '各皮帶盤槽的平行度是否偏移',
+        '空調冷媒是否充填過量',
+        '冷媒管路 O 形環是否老化',
+        '電瓶充電電壓是否過低'
+      ],
+      a: 0,
+      exp: '皮帶側邊異常磨耗或起毛邊，通常是各皮帶盤槽未在同一直線平面（平行度不良）造成側邊摩擦所致。'
+    },
+    {
+      tag: 'Q5 皮帶安裝複檢',
+      q: '安裝驅動皮帶並用張力計調整至規範值後，依課本程序在鎖緊惰輪固定螺帽前應先做什麼？',
+      o: [
+        '順著旋轉方向轉動曲軸皮帶盤 2 圈以上，再次複檢皮帶張力',
+        '直接踩油門拉轉至 5000 rpm',
+        '把惰輪固定螺帽完全拆下再裝回',
+        '潑水測試皮帶會不會打滑'
+      ],
+      a: 0,
+      exp: '暫以 5 Nm 稍鎖並調好張力後，須順旋轉方向轉動曲軸皮帶盤 2 圈以上讓皮帶完全就位，再複檢張力符合規範才依扭力鎖緊。'
+    },
+    {
+      tag: 'Q6 三段管路辨識',
+      q: '關於車輛空調三段冷媒管路的外徑大小與換新補充冷凍油量，下列何者正確？',
+      o: [
+        '低壓氣態管最粗（補 3 ml）、高壓氣態管中等（補 1 ml）、高壓液態管最細（補 1 ml）',
+        '高壓液態管最粗（補 3 ml）、低壓氣態管最細（補 1 ml）',
+        '高壓氣態管最粗（補 5 ml）、其餘不須補油',
+        '三段管路外徑完全相同，更換都不須補油'
+      ],
+      a: 0,
+      exp: '蒸發器至壓縮機的低壓氣態管外徑最粗、表面冷，換新補 3 ml；高壓氣態管中等、高壓液態管最細，換新各補 1 ml。'
+    },
+    {
+      tag: 'Q7 撓性軟管材質',
+      q: 'R-134a 冷媒管路的橡膠撓性軟管，為何必須採用「內襯尼龍層的丁腈膠（NBR）軟管」？',
+      o: [
+        '因為 R-134a 分子直徑較小，容易滲透舊式橡膠軟管',
+        '因為尼龍層可以增加冷媒的沸點',
+        '純粹為了讓軟管外觀比較美觀',
+        '因為 R-134a 壓力比大氣壓還低'
+      ],
+      a: 0,
+      exp: 'R-134a 分子直徑小、滲透性高，須靠內襯尼龍層阻隔滲漏；若誤用舊式 R-12 軟管會導致冷媒滲漏。'
+    },
+    {
+      tag: 'Q8 扭力扳手延長計算',
+      q: '以鴨掌扳手配合扭力扳手鎖緊冷媒管螺帽：若規範扭力 28 Nm、扳手長 300 mm、鴨掌延長 50 mm，呈「0° 直線延長」時設定值應調為多少？若呈「90° 夾角」呢？',
+      o: [
+        '0° 設為 24.0 Nm；90° 免換算直接設 28.0 Nm',
+        '0° 免換算設 28.0 Nm；90° 設為 24.0 Nm',
+        '0° 設為 32.7 Nm；90° 設為 14.0 Nm',
+        '不論角度一律直接設 28.0 Nm'
+      ],
+      a: 0,
+      exp: '0° 直線延長時有效力臂變長為 350 mm，設定值 T_S = 28 × 300 ÷ (300 + 50) = 24.0 Nm；90° 夾角時有效力臂不變，免換算直接設 28.0 Nm。'
+    },
+    {
+      tag: 'Q9 O 形環規格與相容性',
+      q: '關於 R-134a 系統用 O 形環的材質、尺寸標示「12-1.5」與理想壓縮變形率，下列何者完全正確？',
+      o: [
+        '材質為 HNBR、內徑 12 mm／線徑 1.5 mm、理想變形率 20 ± 5%（且不能只靠綠色判別）',
+        '材質為一般天然橡膠、外徑 12 mm／內徑 1.5 mm、變形率越大越好',
+        '只要是綠色 O 形環就一定相容，拆下沒破就可以重複使用',
+        'R-12 用 O 形環可以直接裝在 R-134a 系統上'
+      ],
+      a: 0,
+      exp: 'R-134a 採用 HNBR（耐溫 −30～150℃），標示為「內徑 − 線徑」，線徑 2 mm 理想變形率 20 ± 5%，拆過必換新且不可單靠顏色判別，R-12 用不可用於 R-134a。'
+    },
+    {
+      tag: 'Q10 管路安裝禁忌',
+      q: '安裝冷媒管路時，下列哪一項做法「正確」？',
+      o: [
+        '管路拆開立即包覆接口；換新 O 形環僅塗適量冷凍油（勿塗螺紋防液擠），垂直插入徒手鎖入螺栓再用雙扳手鎖緊扭力',
+        '拆開管路後晾在空氣中 1 小時讓管內乾燥',
+        '把大量冷凍油倒進螺栓螺孔內潤滑，再直接用氣動扳手鎖緊',
+        '用單支開口扳手用力硬轉公母螺帽，管路稍微扭曲沒關係'
+      ],
+      a: 0,
+      exp: '拆開必立即包覆防潮防異物；冷凍油過量流入螺孔鎖緊時會造成「液擠」損壞鋁座；接頭須垂直插入徒手鎖入確認不斜牙，並用雙扳手互抵扭力防止鋁管變形。'
+    }
+  ]
+};
+
+QuizApp(Q4);
+</script></body></html>

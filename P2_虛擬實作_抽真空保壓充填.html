@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>虛擬實作檢定｜抽真空・保壓・定量充填</title>
+<style>
+:root{--bg:#0a1120;--panel:#121c30;--panel2:#18243d;--line:#2a3a5c;--ink:#e6ecf5;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ad07a;--bad:#ff5d5d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0}header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:8px;padding:2px 10px}
+header a{color:var(--acc2);margin-left:auto}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;padding:12px 16px}
+@media(max-width:980px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0d1526;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none}
+.side{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:16px;color:var(--acc)}
+.stat{display:flex;gap:10px;flex-wrap:wrap;font-size:15px}.stat b{font-size:20px}
+.steps{margin:0;padding-left:22px;font-size:14px;line-height:1.55;max-height:320px;overflow:auto}.steps li.done{color:var(--ok)}.steps li.now{color:var(--acc);font-weight:700}
+.log{font-size:13px;line-height:1.5;max-height:180px;overflow:auto;color:var(--mut)}.log .m{color:var(--bad);font-weight:700}.log .d{color:#ffb86b}.log .g{color:var(--ok)}
+button{font:inherit;font-size:15px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:7px 12px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#1a1200;font-weight:700}button:disabled{opacity:.45;cursor:default}
+select,input{font:inherit;font-size:15px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#0d1526;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+#menu{position:absolute;display:none;z-index:5;background:#0b1424f0;border:2px solid var(--acc);border-radius:12px;padding:8px;min-width:230px;box-shadow:0 8px 30px #000a}
+#menu .t{font-size:13px;color:var(--mut);margin:0 4px 6px}#menu button{display:block;width:100%;text-align:left;margin:4px 0;font-size:15px}
+#alert{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;z-index:8}
+#alert .box{background:var(--panel);border:3px solid var(--bad);border-radius:16px;padding:20px 24px;max-width:560px;text-align:center}
+#alert h2{margin:0 0 8px;color:var(--bad)}#alert p{font-size:17px;line-height:1.6}
+.result{font-size:15px;line-height:1.6}.result table{width:100%;border-collapse:collapse;font-size:14px}.result td{border-bottom:1px solid var(--line);padding:4px 6px}
+.pass{color:var(--ok);font-size:26px;font-weight:800}.fail{color:var(--bad);font-size:26px;font-weight:800}
+.cert{border:3px double var(--ok);border-radius:12px;padding:10px;margin-top:8px;text-align:center}
+.hint{font-size:13px;color:var(--mut)}
+.steps .why{font-weight:400;color:#ffd23f;font-size:13px;margin:2px 0 4px}.steps li.wk{margin-bottom:6px}.steps li.blink{background:#ffb02033;border-radius:6px}
+</style></head><body>
+<script src="firebase-config.js"></script><script src="score.js"></script>
+<header><span class="tag">虛擬實作 P2</span><h1>抽真空・保壓・定量充填</h1><span class="hint">檢定只考手動做法；通過才能到實車操作</span><a href="index.html">← 課程首頁</a></header>
+<div class="main">
+  <div class="stage"><svg id="sv" viewBox="0 0 1000 620"></svg><div id="menu"></div>
+    <div id="alert"><div class="box"><h2 id="aT"></h2><p id="aP"></p><button class="pri" id="aB">知道了</button></div></div></div>
+  <div class="side">
+    <div class="card" id="setup"></div>
+    <div class="card"><div class="stat"><span>模式：<b id="sMode">—</b></span><span>⏱ <b id="sTime">0:00</b></span><span>分數 <b id="sScore">100</b></span></div>
+      <div class="row hint" id="sPpe"></div>
+      <div class="row"><button id="hintB" style="display:none">💡 提示</button></div><div id="hintMsg" style="color:#ffd23f;font-size:15px;font-weight:700"></div></div>
+    <div class="card" id="recCard" style="display:none"></div>
+    <div class="card" id="stepCard"><h3 id="stepTitle">📋 工作單</h3><ol class="steps" id="steps"></ol></div>
+    <div class="card"><h3>操作紀錄</h3><div class="log" id="log"></div></div>
+  </div>
+</div>
+<script>
+/* ===== P2 虛擬實作：抽真空・保壓・定量充填（課本 2-4，p44–49）=====
+   檢定只考「手動做法」（真空泵＋電子秤）；練習可切換「自動冷媒回收充填機」流程（老師 11-13 決定） */
+const R134A = [[-26.07, .1013], [-20, .1327], [-10, .2006], [0, .2928], [5, .3497], [10, .4146], [20, .5717], [25, .6654], [30, .7702], [35, .8870], [40, 1.0166], [45, 1.1599], [50, 1.3179], [55, 1.4920], [60, 1.6818]];
+const satP = T => { for (let i = 1; i < R134A.length; i++) if (T <= R134A[i][0]) { const [a, p] = R134A[i - 1], [b, q] = R134A[i]; return (p + (q - p) * (T - a) / (b - a) - .1013) * 1000; } return 915; };
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
+const LIMIT = 900, PASS = 80, RATE = 25;   // 檢定 15 分鐘；充填速度 25 g/s
+const toMm = p => Math.round(clamp(-p * 760 / 101.325, 0, 760)), toKpa = mm => -mm * 101.325 / 760;
+/* 表 6-5 正常範圍（外氣 25／30／35℃） */
+const RANGE = { 25: [930, 1130, 220, 270], 30: [1230, 1500, 290, 350], 35: [1290, 1580, 350, 420] };
+const rangeOf = a => RANGE[a <= 27 ? 25 : a <= 32 ? 30 : 35];
+
+/* ===== 評分 ===== */
+const MAJOR = {
+  ppe: '未戴護目鏡及手套就操作冷媒部件',
+  pumpP: '系統還有壓力就用真空泵抽真空（損壞真空泵、冷媒排放）',
+  vent: '冷媒排放到大氣',
+  liqLow: '液態充填時打開低壓手動閥（液態冷媒進入壓縮機）',
+  liqEng: '液態充填中發動引擎',
+  hiRun: '引擎運轉中打開高壓手動閥',
+  leakGo: '保壓測試有洩漏，仍繼續充填冷媒',
+  time: '超過檢定時間（15 分鐘）',
+};
+const DED = {
+  noChk: ['接真空泵前未讀錶確認系統壓力', 5], vacShort: ['抽真空未達 15 分鐘或真空度未達 757 mmHg', 10], pumpOffOpen: ['手動閥未關就關閉真空泵（空氣倒灌）', 10],
+  noHold: ['未做保壓測試', 10], holdErr: ['保壓紀錄或判斷錯誤', 10], air: ['讓空氣進入真空中的系統', 10], noPurge: ['未排除中央軟管內的空氣', 10],
+  notInv: ['冷媒桶未倒置（不是液態充填）', 5], scaleErr: ['電子秤起始讀數或關閥讀數錯誤', 10], chgErr: ['充填量誤差超過 15 g', 10], chgBad: ['充填量誤差超過 40 g', 20],
+  cycle: ['未先做 A/C OFF→ON→OFF 3 次', 5], acEmpty: ['系統沒有冷媒就開 A/C', 5], runErr: ['運轉壓力紀錄或判斷錯誤', 10], lowFast: ['低壓手動閥一次全開（壓力超過 280 kPa）', 5],
+  canEnd: ['完成時冷媒桶閥未關', 5], hvEnd: ['完成時手動閥未關', 5], engEnd: ['完成時引擎未熄火', 5], miss: ['漏做步驟', 10], autoWrong: ['選錯操作', 5], hint: ['使用提示卡', 5],
+};
+const CAT = { 程序: ['noChk', 'noHold', 'noPurge', 'notInv', 'cycle', 'acEmpty', 'miss', 'autoWrong'], 操作技能: ['vacShort', 'pumpOffOpen', 'air', 'chgErr', 'chgBad', 'lowFast', 'canEnd', 'hvEnd', 'engEnd'], 紀錄判讀: ['holdErr', 'scaleErr', 'runErr'], 提示: ['hint'] };
+
+/* ===== 手動做法：程序 ===== */
+const STEPS = [
+  ['ppe', '戴上護目鏡與防油污手套'],
+  ['chkP', '點錶面放大，確認系統沒有壓力（錶在 0 或真空）'],
+  ['recov', '（系統還有冷媒時）中央軟管接回收機，手動閥全開，執行回收，完成後關閥'],
+  ['hosePump', '中央軟管接到真空泵'],
+  ['pumpOn', '打開真空泵（隔離閥開）'],
+  ['open', '小心完全旋開低壓、高壓手動閥'],
+  ['vac', '抽真空 15 分鐘以上，真空度達 757 mmHg 以上'],
+  ['closeV', '關閉低壓、高壓手動閥與真空泵隔離閥，再關真空泵'],
+  ['hold', '保壓：靜置 5 分鐘'],
+  ['holdRec', '讀錶記錄保壓前後真空度並判斷'],
+  ['hoseCan', '中央軟管從真空泵拆下，接到冷媒桶'],
+  ['canOpen', '打開冷媒桶閥門'],
+  ['purge', '鬆開中央軟管（檢修錶端）接頭 1～2 秒排空氣，再鎖緊'],
+  ['inv', '冷媒桶倒置放上電子秤'],
+  ['scaleRec', '記錄電子秤起始讀數，算出關閥讀數'],
+  ['charge', '緩緩打開高壓手動閥液態充填，讀數到了就關閉高壓手動閥'],
+  ['closeCan', '關閉冷媒桶閥門'],
+  ['eng', '發動引擎'],
+  ['cycle', 'A/C 開關 OFF→ON→OFF 反覆 3 次'],
+  ['acSet', 'A/C ON，設定最冷、車內循環、鼓風機最高、車窗全開'],
+  ['runRec', '讀高低壓，記錄並判斷是否在正常範圍'],
+  ['lowOpen', '緩緩打開低壓手動閥，吸回錶與軟管內冷媒（≤280 kPa）'],
+  ['lowClose', '低壓穩定後關閉低壓手動閥'],
+  ['off', 'A/C OFF、引擎熄火，按「完成作業」'],
+];
+const WORK = [
+  { t: '1. 安全與確認', d: '戴護具；讀錶確認系統沒有壓力（有壓力先回收）', k: ['ppe', 'chkP', 'recov'] },
+  { t: '2. 抽真空', d: '中央軟管接真空泵，手動閥全開，抽 15 分鐘以上、757 mmHg 以上', k: ['hosePump', 'pumpOn', 'open', 'vac'] },
+  { t: '3. 保壓測試', d: '關閥、靜置 5 分鐘、記錄並判斷有無洩漏', k: ['closeV', 'hold', 'holdRec'] },
+  { t: '4. 定量充填', d: '接冷媒桶、排空氣、倒置、記錄讀數，高壓側充填到規定量', k: ['hoseCan', 'canOpen', 'purge', 'inv', 'scaleRec', 'charge', 'closeCan'] },
+  { t: '5. 啟動檢查', d: '發動，A/C OFF→ON→OFF 3 次，設定冷氣，讀錶判斷', k: ['eng', 'cycle', 'acSet', 'runRec'] },
+  { t: '6. 收尾', d: '緩開低壓閥吸回殘留冷媒、關閥、熄火、完成作業', k: ['lowOpen', 'lowClose', 'off'] },
+];
+const WHY = {
+  ppe: '抽真空、充填都會接觸冷媒，冷媒噴到眼睛或皮膚會凍傷。',
+  chkP: '系統還有壓力就抽真空，會損壞真空泵，也等於把冷媒排掉。',
+  recov: '錶上有壓力代表還有冷媒，要先回收，不可排放。',
+  hosePump: '中央（黃色）軟管連接各種設備：這次接真空泵。',
+  pumpOn: '先讓真空泵運轉，再打開手動閥。',
+  open: '抽真空＝四種閥位的「全開」，高低壓兩側一起抽。',
+  vac: '真空讓水分在低溫沸騰被抽走；臺灣潮濕，常抽 20～30 分鐘。',
+  closeV: '先關手動閥再關真空泵，否則空氣會倒灌回系統。',
+  hold: '靜置 5 分鐘以上，看真空度有沒有改變。',
+  holdRec: '真空度不變＝密封良好；變小（指針往 0 回升）＝有洩漏，要先修復，不可充填。',
+  hoseCan: '手動閥關著時才能換接，系統才不會進空氣。',
+  canOpen: '打開桶閥，冷媒才會進到中央軟管。',
+  purge: '軟管裡有空氣，用冷媒壓力把空氣推出；1～2 秒內完成，避免浪費冷媒。',
+  inv: '桶口朝下流出液態冷媒，才能由高壓側液態充填。',
+  scaleRec: '冷媒流出，秤的讀數會減少：關閥讀數＝起始讀數－規定充填量。',
+  charge: '液態充填時不可發動引擎、不可開低壓手動閥。',
+  closeCan: '充填完先關桶閥，避免之後打開低壓閥時桶內冷媒又流進系統。',
+  eng: '充填完成後才發動。',
+  cycle: '短暫開關 A/C，避免壓縮機一下子吸入過量液態冷媒而損壞。',
+  acSet: '最大冷氣負荷的設定，才能和正常範圍比較。',
+  runRec: '對照外氣溫度的正常範圍，判斷充填結果。',
+  lowOpen: '運轉中低壓側會把錶和軟管裡的冷媒吸進系統；慢慢開，低壓保持 280 kPa 以下。',
+  lowClose: '低壓降到穩定最低時關閉，檢修錶迴路關閉。',
+  off: '關 A/C、熄火後才可以拆錶（拆錶程序同 P1）。',
+};
+const HINT = {
+  ppe: '先處理左上角的護具。', chkP: '看看檢修錶的錶面。', recov: '用左邊的回收機。', hosePump: '點左邊的真空泵。', pumpOn: '點真空泵。', open: '點檢修錶的兩個手動閥。',
+  vac: '點真空泵，讓它繼續抽。', closeV: '先處理手動閥，再處理真空泵。', hold: '看右邊的狀態面板。', holdRec: '看右側紀錄卡。', hoseCan: '點左邊的冷媒桶。',
+  canOpen: '點冷媒桶。', purge: '點冷媒桶。', inv: '點冷媒桶。', scaleRec: '看右側紀錄卡。', charge: '點高壓手動閥，注意電子秤。', closeCan: '點冷媒桶。',
+  eng: '點駕駛座。', cycle: '點駕駛座的 A/C 開關。', acSet: '看右邊的狀態面板。', runRec: '看右側紀錄卡。', lowOpen: '點低壓手動閥。', lowClose: '點低壓手動閥。', off: '點駕駛座，最後按完成作業。',
+};
+
+/* ===== 自動冷媒回收充填機：練習用（每步選對的操作） ===== */
+const AUTO = () => [
+  { scr: 'READY', q: '這台車冷氣還能正常運作。接回收機之前，要先做什麼？', o: [['冷凍油回流：怠速、A/C ON 最冷、車內循環、鼓風機最高，運轉 10 分鐘後 A/C OFF、熄火', 1, '讓冷凍油回到壓縮機，回收時少被帶走。'], ['引擎熄火冷卻 10 分鐘，讓系統壓力降低後，直接接上設備開始回收', 0, '回收前要先運轉讓冷凍油回流，否則冷凍油會被大量帶走。'], ['引擎怠速、A/C OFF、外循環、鼓風機最低，運轉 10 分鐘讓系統升溫後熄火', 0, '冷凍油回流要 A/C ON、最冷、車內循環、鼓風機最高。']] },
+  { scr: 'READY', q: '連接設備軟管：', o: [['紅色接 H、藍色接 L，依序完全旋入低壓、高壓切斷閥，確認錶上升且合理', 1, '旋入切斷閥才會頂開閥嘴；熄火時錶約等於外氣溫度的飽和壓力。'], ['紅色接 L、藍色接 H，依序完全旋入低壓、高壓切斷閥，確認錶上升且合理', 0, '紅＝高壓 H，藍＝低壓 L。'], ['紅色接 H、藍色接 L，切斷閥保持旋出，讓設備自己頂開閥嘴', 0, '切斷閥要旋入才會頂開閥嘴，否則設備讀不到系統壓力。']] },
+  { scr: '主選單', q: '選擇要執行的功能：', o: [['RECOVER（回收）：把系統冷媒吸出、再生存進內建冷媒桶', 1, '先把冷媒回收再生。'], ['VACUUM（抽真空）：直接把系統抽到 757 mmHg 以上', 0, '系統還有冷媒，不能直接抽真空。'], ['CHARGE（充填）：先補滿冷媒，之後再回收比較快', 0, '要先回收、抽真空，最後才充填。']] },
+  { scr: 'RECOVER…', q: '回收中，高低壓錶一直下降，最後變成負壓。應該？', o: [['正常現象，等回收完成，記錄冷媒回收量與廢油量', 1, '回收時壓力下降甚至負壓是正常的；廢油量和油質可評估系統。'], ['異常現象，立刻停機，檢查回收機是否故障', 0, '負壓是正常現象。'], ['異常現象，打開檢修錶手動閥讓壓力恢復到 0', 0, '會讓空氣進入系統，也不需要。']] },
+  { scr: '回收完成', q: '前一台車用的冷凍油種類和這台不同，接下來？', o: [['抽真空後執行管路沖洗（HOSE FLUSH），清掉設備管路殘留的舊油', 1, '冷凍油種類不同時，要把設備管路殘留的冷凍油沖洗出來。'], ['不用處理，設備管路殘留的冷凍油量很少，混用沒有影響', 0, '不同種類冷凍油混用會劣化。'], ['把廢油瓶裡分離出的舊油加回新油瓶，補油時一起用完', 0, '分離出的舊油不可再用。']] },
+  { scr: 'VACUUM 設定', q: '抽真空時間要設定多久？', o: [['25 分鐘（至少 15 分鐘，臺灣潮濕常抽 20～30 分鐘）', 1, '至少 15 分鐘，臺灣常抽 20～30 分鐘。'], ['5 分鐘（真空度一到 757 mmHg 就可以停止）', 0, '真空度到了還要持續抽，水分才抽得乾淨，至少 15 分鐘。'], ['10 分鐘（天氣冷的時候可以再縮短）', 0, '天冷反而要抽更久。']] },
+  { scr: 'VACUUM 完成', q: '抽真空完成後：', o: [['等待至少 5 分鐘，確認真空度沒有改變，再進行充填', 1, '真空度變小代表有洩漏，要先修復。'], ['馬上開始充填，避免空氣慢慢滲進系統', 0, '要先確認沒有洩漏。'], ['打開檢修錶手動閥，確認兩側都已經是真空', 0, '會讓空氣進入系統。']] },
+  { scr: 'INJECT OIL', q: '回收時分離出 12 ml 廢油，沒有更換零件。補油量應輸入？', o: [['12 ml，使用全新、同種類的冷凍油', 1, '補油量＝分離油量＋更換零件殘留量（本題沒換零件）。'], ['0 ml，沒有更換零件就不用補油', 0, '回收時帶走的冷凍油要補回。'], ['12 ml，把廢油瓶分離出的舊油倒回去使用', 0, '分離出的舊油不可再用。']] },
+  { scr: 'CHARGE 設定', q: '規定充填量 {SPEC} g，充填設定：', o: [['輸入 {SPEC} g，選擇從高壓端充填', 1, '高壓端液態充填，充填量依規定。'], ['輸入 {SPEC} g，選擇從低壓端充填並發動引擎', 0, '自動設備依課本選高壓端充填，充填中不可發動。'], ['輸入比規定多 100 g，避免之後冷媒不足', 0, '不可過度充填。']] },
+  { scr: 'CHARGE…', q: '充填進行中，旁邊同學想把設備推開一點：', o: [['不可以，充填中不可移動設備，會影響內部電子秤', 1, '移動會影響設備內部電子秤的精度。'], ['可以，只要軟管沒有拉緊，推慢一點就好', 0, '會影響電子秤。'], ['可以，但要先發動引擎讓冷媒充得快一點', 0, '充填中不可發動引擎，也不可移動設備。']] },
+  { scr: '充填完成', q: '充填完成，接下來：', o: [['發動，A/C OFF→ON→OFF 反覆 3～5 次，再 A/C ON 最冷、內循環、鼓風機最高、車窗全開', 1, '避免壓縮機吸入過量液態冷媒，再用最大負荷檢查。'], ['發動，直接 A/C ON 開到最冷、鼓風機最高，觀察壓力', 0, '要先短暫開關 3～5 次。'], ['不用發動，熄火狀態直接做管路平衡後拆管', 0, '要先檢查運轉狀況，再做管路平衡。']] },
+  { scr: '檢查', q: '高低壓、出風口溫度都在合理範圍。設備提示「管路平衡（Hose Equalize）」：', o: [['依提示先完全旋出高壓切斷閥，按 ✓ 開始管路平衡', 1, '先旋出高壓側，讓管內冷媒經低壓側吸回系統。'], ['依提示先完全旋出低壓切斷閥，按 ✓ 開始管路平衡', 0, '依設備提示，先旋出高壓切斷閥。'], ['兩側切斷閥同時旋出後，按 ✓ 開始管路平衡', 0, '先旋出高壓，平衡完成後才旋出低壓。']] },
+  { scr: '平衡完成', q: '管路平衡完成後：', o: [['旋出低壓切斷閥，A/C 關、熄火，拆管；設備自動回收軟管內殘留冷媒', 1, '最後整理軟管，接頭套回置放座。'], ['旋出低壓切斷閥，引擎保持運轉，直接拆下兩條軟管', 0, '要熄火後再拆。'], ['低壓切斷閥保持旋入，A/C 關、熄火，直接拆管', 0, '切斷閥沒旋出就拆，冷媒會噴出。']] },
+];
+
+/* ===== 狀態 ===== */
+const HINT_MAX = 3, HINT_PASS = 2, IDLE = 45;
+const MODE = { guide: '練習 1：導引', mock: '練習 2：工作單', exam: '檢定' }, METH = { man: '手動做法（真空泵＋電子秤）', auto: '自動回收充填機' };
+let S, timer = null, who = { cls: store.get('act_cls'), grp: store.get('act_grp'), op: store.get('p1_op') || '1' };
+function fresh(mode, meth) {
+  const amb = 25 + Math.floor(Math.random() * 11), spec = 600 + 10 * Math.floor(Math.random() * 11);
+  S = { mode, meth, amb, spec, t0: Date.now(), sec: 0, end: false, leak: Math.random() < .25, resid: Math.random() < .3,
+    ppe: { g: false, h: false }, eng: false, ac: false, acOnCount: 0, acSet: false,
+    hv: { L: false, H: false }, center: 'none', pumpOn: false, iso: true, p: 0, vacMin: 0, holdMm: null, holdEnd: null, recHold: null,
+    canOpen: false, inv: false, purged: false, kg0: +(12 + Math.random() * 2).toFixed(2), got: 0, charging: false, chT: 0, recScale: null, recRun: null, lowSlow: null,
+    ded: {}, major: null, majors: [], log: [], done: new Set(), hints: 0, lastAct: Date.now(), nudged: false, flash: 0, hintMsg: '', zoom: null, ai: 0, aDone: [] };
+  S.p = S.resid ? Math.round(satP(amb)) : -10;
+  if (!S.resid) S.done.add('recov');
+  clearInterval(timer); timer = setInterval(tick, 250);
+  log(meth === 'auto' ? `開始${MODE[mode]}（${METH.auto}）。規定充填量 ${spec} g。` : `開始${MODE[mode]}。外氣 ${amb}℃；冷氣零件已維修完成，檢修錶已接在車上（切斷閥已旋入、手動閥關）。規定充填量 ${spec} g。`, 'g');
+  render();
+}
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function log(s, c = '') { S.log.unshift(`<div class="${c}">[${fmt(S.sec || 0)}] ${s}</div>`); }
+function ded(k, extra = '') { if (S.ded[k]) return; S.ded[k] = DED[k][1]; log(`扣分 −${DED[k][1]}：${DED[k][0]}${extra}`, 'd'); }
+function major(k, extra = '') {
+  if (S.end) return; log(`重大缺失：${MAJOR[k]}${extra}`, 'm');
+  if (S.mode === 'exam') { S.major = k; finish(); }
+  else { S.majors.push(k); showAlert('⚠ 重大缺失', `${MAJOR[k]}${extra}<br><br>檢定模式中，這一項會<b>直接不及格</b>。<br>（練習模式可以繼續操作）`); }
+}
+const score = () => Math.max(0, 100 - Object.values(S.ded).reduce((a, b) => a + b, 0));
+const waived = k => S.leak && S.recHold && S.recHold.ok && ['hoseCan', 'canOpen', 'purge', 'inv', 'scaleRec', 'charge', 'closeCan', 'eng', 'cycle', 'acSet', 'runRec', 'lowOpen', 'lowClose'].includes(k);
+const curWork = () => WORK.findIndex(w => w.k.some(k => !S.done.has(k) && !waived(k)));
+const nextStep = () => STEPS.find(([k]) => !S.done.has(k) && !waived(k));
+const mm = () => toMm(S.p);
+const running = () => S.eng && S.ac && S.acSet && S.got > 100;
+/* 錶讀數：運轉中依表 6-5 中間值，充填量不足或過多時跟著偏移 */
+function readP() {
+  if (running()) { const r = rangeOf(S.amb), k = clamp(S.got / S.spec, .3, 1.4), lowOpenBoost = S.hv.L && S.lowSlow === false ? 140 : 0;
+    return { L: Math.round((r[2] + r[3]) / 2 * (.75 + .25 * k)) + lowOpenBoost, H: Math.round((r[0] + r[1]) / 2 * (.8 + .2 * k)) }; }
+  return { L: Math.round(S.p), H: Math.max(0, Math.round(S.p)) };
+}
+
+function tick() {
+  if (!S || S.end) return; S.sec = (Date.now() - S.t0) / 1000; $('#sTime').textContent = fmt(S.sec);
+  if (S.mode === 'exam' && S.sec > LIMIT) major('time');
+  if (S.charging) { const g = Math.min(1600, S.got + RATE * .25 * (S.inv ? 1 : .25)); S.got = g; S.p = Math.round(lerp(toKpa(S.holdEnd ?? 757), satP(S.amb), clamp(g / 120, 0, 1))); renderScene(); }
+  if (S.mode !== 'guide' && !S.nudged && Date.now() - S.lastAct > IDLE * 1000) { S.nudged = true; S.flash = Date.now(); const w = curWork();
+    if (w >= 0) { log(`⏳ 停很久了：目前在工作單第 ${w + 1} 項「${WORK[w].t}」。`, 'd'); render(); } }
+  if (S.flash && Date.now() - S.flash < 4500) { const el = document.querySelector('.wk.now'); if (el) el.classList.toggle('blink'); }
+}
+
+/* ===== 動作選單 ===== */
+function menu(x, y, title, items) {
+  const m = $('#menu'), st = $('.stage').getBoundingClientRect(), sv = $('#sv').getBoundingClientRect(), k = sv.width / 1000;
+  m.innerHTML = `<div class="t">${title}</div>` + items.map((it, i) => `<button data-i="${i}">${it[0]}</button>`).join('') + '<button data-i="x">✕ 取消</button>';
+  m.style.display = 'block'; let L = x * k + 10, T = y * k + 10; if (L + 280 > st.width) L = st.width - 290; if (T + m.offsetHeight > st.height) T = Math.max(4, st.height - m.offsetHeight - 6);
+  m.style.left = L + 'px'; m.style.top = T + 'px';
+  m.querySelectorAll('button').forEach(b => b.onclick = e => { e.stopPropagation(); m.style.display = 'none'; if (b.dataset.i !== 'x') { items[+b.dataset.i][1](); after(); } });
+}
+function after() { checkSteps(); if (S.hintMsg && S.hintStep !== nextStep()?.[0]) S.hintMsg = ''; S.hintStep = nextStep()?.[0]; render(); }
+function showAlert(t, p) { $('#aT').textContent = t; $('#aP').innerHTML = p; $('#alert').style.display = 'flex'; }
+$('#aB').onclick = () => { $('#alert').style.display = 'none'; };
+const ppeOk = () => { if (!S.ppe.g || !S.ppe.h) { major('ppe'); return false; } return true; };
+
+/* 打開手動閥時，依中央軟管接的東西判斷 */
+function openValve(s) {
+  if (!ppeOk()) return; const nm = s === 'L' ? '低壓' : '高壓', liquidSrc = S.center === 'can' && S.canOpen && S.inv;
+  if (s === 'H' && S.eng) { major('hiRun'); return; }
+  if (s === 'L' && liquidSrc && !S.eng) { major('liqLow'); }
+  if (s === 'L' && S.center === 'can' && S.canOpen && S.eng) { major('liqLow', '（冷媒桶閥沒關，桶內冷媒由低壓側灌入運轉中的壓縮機）'); }
+  S.hv[s] = true; log(`打開${nm}手動閥。`);
+  if (S.center === 'none') { if (S.p > 20) major('vent', '（中央軟管末端開放，冷媒噴出）'); else if (S.p < -5) { ded('air'); S.p = 0; log('空氣從中央軟管跑進系統，真空消失。', 'd'); } }
+  if (S.center === 'pump') { if (S.p > 30) { major('pumpP'); S.p = 0; } else if (!S.done.has('chkP')) ded('noChk'); }
+  if (S.center === 'can' && S.p < -5 && (!S.canOpen)) { ded('air'); S.p = 0; log('冷媒桶閥沒開、軟管裡的空氣被吸進系統。', 'd'); }
+  if (S.center === 'can' && s === 'H' && S.canOpen) {
+    if (S.leak && S.recHold && S.recHold.ok) major('leakGo'); else if (S.leak && !S.recHold) major('leakGo', '（未完成保壓判斷就充填，實際系統有洩漏）');
+    if (!S.purged) ded('noPurge'); if (!S.inv) ded('notInv'); if (S.vacMin < 15 || (S.holdMm ?? mm()) < 757) ded('vacShort'); if (S.holdEnd == null) ded('noHold');
+    S.charging = true; log('高壓側開始充填，盯著電子秤！', 'g'); }
+  if (s === 'L' && running()) { if (S.lowSlow == null) S.lowSlow = true; log('低壓手動閥緩緩打開，錶與軟管內的冷媒吸入系統。'); }
+}
+function closeValve(s) {
+  S.hv[s] = false; log(`關閉${s === 'L' ? '低壓' : '高壓'}手動閥。`);
+  if (s === 'H' && S.charging) { S.charging = false; const err = Math.round(S.got - S.spec);
+    log(`停止充填：充入 ${Math.round(S.got)} g（規定 ${S.spec} g，${err >= 0 ? '多' : '少'} ${Math.abs(err)} g）。`, Math.abs(err) <= 15 ? 'g' : 'd');
+    if (Math.abs(err) > 40) ded('chgBad'); else if (Math.abs(err) > 15) ded('chgErr'); S.chT = 1; }
+  if (s === 'L' && running() && S.lowSlow != null) S.lowDone = true;
+}
+function hoseTo(dev) {
+  if (!ppeOk()) return;
+  if (S.hv.L || S.hv.H) { if (S.p > 20 || (S.center === 'can' && S.canOpen)) { major('vent', '（手動閥開著就拆中央軟管）'); } else if (S.p < -5) { ded('air'); S.p = 0; } }
+  else if (S.center === 'can' && S.canOpen) major('vent', '（冷媒桶閥沒關就拆中央軟管）');
+  if (S.center === 'pump' && S.pumpOn) { S.pumpOn = false; log('拆軟管前關閉真空泵。'); }
+  S.center = dev; log(`中央軟管接到${{ rec: '回收機', pump: '真空泵', can: '冷媒桶' }[dev]}。`);
+}
+
+function act(obj, x, y) {
+  if (!S || S.end) return; S.lastAct = Date.now(); S.nudged = false; S.flash = 0;
+  if (S.meth === 'auto') return;
+  if (obj === 'zoomX') { S.zoom = null; return render(); }
+  if (obj === 'gog') { S.ppe.g = true; log('戴上護目鏡。'); return after(); }
+  if (obj === 'glv') { S.ppe.h = true; log('戴上防油污手套。'); return after(); }
+  if (obj === 'gL' || obj === 'gH') { S.zoom = obj.slice(1); if (!S.center || S.center === 'none') S.looked = true; S.lookP = S.p; return after(); }
+  if (obj === 'hvL' || obj === 'hvH') { const s = obj.slice(-1), nm = s === 'L' ? '低壓' : '高壓';
+    if (S.hv[s]) return menu(x, y, `${nm}手動閥（目前：開）`, [['↻ 順時針旋緊（關閉）', () => closeValve(s)]]);
+    const items = [['↺ 逆時針旋開（打開）', () => openValve(s)]];
+    if (s === 'L' && running()) items.unshift(['↺ 緩緩打開，監看低壓 ≤280 kPa', () => { S.lowSlow = true; openValve('L'); }], ['↺ 一次全開', () => { S.lowSlow = false; ded('lowFast'); openValve('L'); }]), items.pop();
+    return menu(x, y, `${nm}手動閥（目前：關）`, items); }
+  if (obj === 'rec') return menu(x, y, '冷媒回收機', [
+    ['把中央軟管接到回收機', () => hoseTo('rec')],
+    ['執行回收（RECOVER）', () => { if (S.center !== 'rec') return log('中央軟管沒有接回收機。', 'd'); if (!S.hv.L && !S.hv.H) return log('手動閥都關著，回收機吸不到系統的冷媒。', 'd'); S.p = -15; S.recovered = true; log('回收完成：系統降到負壓。記得關閉手動閥。', 'g'); }]]);
+  if (obj === 'pump') return menu(x, y, `真空泵（${S.pumpOn ? '運轉中' : '停止'}，已抽 ${S.vacMin} 分鐘）`, [
+    ['把中央軟管接到真空泵', () => hoseTo('pump')],
+    [S.pumpOn ? '關閉真空泵' : '打開真空泵（隔離閥開）', () => { if (S.pumpOn) { S.pumpOn = false; log('關閉真空泵。'); if (S.center === 'pump' && (S.hv.L || S.hv.H) && S.p < -5) { ded('pumpOffOpen'); S.p = toKpa(mm() * .6); } }
+      else { if (S.center === 'pump' && (S.hv.L || S.hv.H) && S.p > 30) { major('pumpP'); S.p = 0; } S.pumpOn = true; S.iso = true; log('真空泵運轉。'); } }],
+    ['繼續抽真空 5 分鐘', () => vac(5)], ['繼續抽真空 10 分鐘', () => vac(10)],
+    ['關閉隔離閥', () => { S.iso = false; log('關閉真空泵隔離閥。'); }]]);
+  if (obj === 'can') return menu(x, y, `冷媒桶（閥${S.canOpen ? '開' : '關'}、${S.inv ? '倒置' : '正放'}）`, [
+    ['把中央軟管接到冷媒桶', () => hoseTo('can')],
+    [S.canOpen ? '關閉冷媒桶閥門' : '打開冷媒桶閥門', () => { if (!ppeOk()) return; S.canOpen = !S.canOpen; log(S.canOpen ? '打開冷媒桶閥門。' : '關閉冷媒桶閥門。'); }],
+    ['排空氣：鬆開中央軟管接頭 1～2 秒後鎖緊', () => { if (!ppeOk()) return; if (S.center !== 'can' || !S.canOpen) return log('冷媒桶沒接上或閥沒開，軟管裡沒有冷媒可以推出空氣。', 'd'); S.purged = true; log('嘶—1～2 秒，軟管內空氣排出，接頭鎖緊。', 'g'); }],
+    ['排空氣：鬆開接頭放 10 秒確保排乾淨', () => { if (!ppeOk()) return; if (S.center === 'can' && S.canOpen) { S.purged = true; major('vent', '（排空氣太久，大量冷媒排放）'); } }],
+    [S.inv ? '冷媒桶正放' : '冷媒桶倒置放上電子秤', () => { S.inv = !S.inv; log(S.inv ? '冷媒桶倒置放上電子秤。' : '冷媒桶正放。'); }]]);
+  if (obj === 'key') return menu(x, y, '點火開關', [[S.eng ? '引擎熄火' : '發動引擎', () => { if (S.eng) { S.eng = false; S.ac = false; S.acSet = false; log('引擎熄火。'); return; }
+    if (S.charging || (S.hv.H && S.center === 'can' && S.canOpen)) major('liqEng'); S.eng = true; log('發動引擎。'); }]]);
+  if (obj === 'acsw') { if (!S.eng) return log('引擎沒發動，A/C 不會運轉。', 'd'), render();
+    S.ac = !S.ac; if (S.ac) { if (S.got < 100) ded('acEmpty'); S.acOnCount++; } else S.acSet = false; log(`A/C ${S.ac ? 'ON' : 'OFF'}${S.ac ? `（第 ${S.acOnCount} 次）` : ''}`); return after(); }
+  if (obj === 'acset') { if (!S.eng || !S.ac) return log('先發動引擎、A/C ON。', 'd'), render(); if (S.acOnCount < 4) ded('cycle'); S.acSet = true; log('設定：最冷、車內循環、鼓風機最高、車窗全開。'); return after(); }
+  if (obj === 'hold') { if (S.hv.L || S.hv.H) return log('手動閥要先關閉，系統密閉才能保壓。', 'd'), render(); if (mm() < 300) return log('系統沒有真空，不能做保壓測試。', 'd'), render();
+    S.holdMm = mm(); S.p = S.leak ? toKpa(S.holdMm - 150 - Math.floor(Math.random() * 40)) : S.p; S.holdEnd = mm(); S.holdDone = true; log('靜置 5 分鐘……請讀錶記錄。', 'g'); return after(); }
+  if (obj === 'done') return menu(x, y, '完成作業？', [['✔ 確定完成，交卷', finishCheck]]);
+}
+function vac(n) {
+  if (S.center !== 'pump' || !S.pumpOn) return log('真空泵沒有接上或沒有運轉。', 'd');
+  if (!S.hv.L && !S.hv.H) return log('手動閥都關著，真空泵抽不到系統。', 'd');
+  if (S.p > 30) { major('pumpP'); S.p = 0; }
+  S.vacMin += n; const both = S.hv.L && S.hv.H, m = clamp(757 * Math.min(1, S.vacMin / (both ? 10 : 20)) + (S.vacMin >= 15 ? 1 : 0), 0, 758);
+  S.p = toKpa(m); log(`抽真空 ${n} 分鐘（累計 ${S.vacMin} 分鐘）。`);
+}
+function checkSteps() {
+  const d = S.done; if (S.meth === 'auto') return;
+  if (S.ppe.g && S.ppe.h) d.add('ppe');
+  if (S.zoom && S.lookP != null && !d.has('hosePump')) d.add('chkP');
+  if (S.resid && S.recovered && !S.hv.L && !S.hv.H) d.add('recov');
+  if (S.center === 'pump') d.add('hosePump'); if (S.pumpOn && S.center === 'pump') d.add('pumpOn');
+  if (S.hv.L && S.hv.H && S.center === 'pump') d.add('open'); if (S.vacMin >= 15 && mm() >= 757) d.add('vac');
+  if (d.has('vac') && !S.hv.L && !S.hv.H && !S.pumpOn) d.add('closeV'); if (S.holdDone) d.add('hold'); if (S.recHold) d.add('holdRec');
+  if (d.has('holdRec') && S.center === 'can') d.add('hoseCan'); if (S.canOpen && S.center === 'can') d.add('canOpen'); if (S.purged) d.add('purge'); if (S.inv) d.add('inv');
+  if (S.recScale) d.add('scaleRec'); if (S.chT && !S.charging) d.add('charge'); if (d.has('charge') && !S.canOpen) d.add('closeCan');
+  if (S.eng && d.has('charge')) d.add('eng'); if (d.has('eng') && ((S.acOnCount >= 3 && !S.ac) || S.acOnCount >= 4)) d.add('cycle'); if (S.acSet) d.add('acSet'); if (S.recRun) d.add('runRec');
+  if (S.hv.L && running()) d.add('lowOpen'); if (S.lowDone) d.add('lowClose'); if (d.has('lowClose') && !S.eng) d.add('off');
+}
+function finishCheck() {
+  if (S.meth === 'auto') return finish();
+  const need = STEPS.map(s => s[0]).filter(k => !['off'].includes(k) && !waived(k) && !S.done.has(k));
+  if (!S.holdDone && !waived('hold')) ded('noHold');
+  if (need.length) { S.ded.miss = Math.min(40, need.length * 5); log(`漏做步驟 −${S.ded.miss}：${need.map(k => STEPS.find(s => s[0] === k)[1]).slice(0, 4).join('；')}${need.length > 4 ? '……' : ''}`, 'd'); }
+  if (S.canOpen) ded('canEnd'); if (S.hv.L || S.hv.H) ded('hvEnd'); if (S.eng) ded('engEnd');
+  S.done.add('off'); finish();
+}
+function finish() {
+  S.end = true; S.charging = false; clearInterval(timer); S.sec = (Date.now() - S.t0) / 1000;
+  const sc = S.major ? 0 : score(), hintOk = S.mode !== 'exam' || S.hints <= HINT_PASS, leakStop = S.meth === 'man' && S.leak && S.recHold && S.recHold.ok, pass = !S.major && sc >= PASS && hintOk && S.mode === 'exam' && !leakStop;
+  const items = Object.entries(S.ded).map(([k, v]) => [DED[k] ? DED[k][0] : k, v, k]);
+  const code = pass ? ('V' + ((Date.now() / 1000 | 0) % 100000).toString(36).toUpperCase() + '-' + who.grp + who.op) : '';
+  const okMock = S.mode !== 'exam' && !S.major && !S.majors.length && sc >= PASS;
+  const verdict = leakStop && !S.major && sc >= PASS ? '洩漏判斷正確 ✔' : S.major ? '不及格（重大缺失）' : sc < PASS ? '未達 80 分' : !hintOk ? `不及格（提示用了 ${S.hints} 次，上限 ${HINT_PASS} 次）` : S.mode === 'exam' ? '及格 ✔' : S.majors.length ? '有重大缺失，還要再練' : '練習達標 ✔';
+  const cats = Object.entries(CAT).map(([c, ks]) => { const its = items.filter(i => ks.includes(i[2])), sub = its.reduce((a, i) => a + i[1], 0);
+    return `<tr><td><b>${c}</b>${its.length ? '<br><span class="hint">' + its.map(i => esc(i[0])).join('、') + '</span>' : ''}</td><td>${sub ? '−' + sub : '✔'}</td></tr>`; }).join('');
+  const leakNote = S.leak && S.meth === 'man' ? `<div class="hint">本次情境：系統<b>有洩漏</b>。${leakStop ? '你正確判斷並停止充填 ✔　這次不需要充填，所以<b>還沒有實車資格</b>，請再做一次檢定。' : ''}</div>` : '';
+  $('#stepCard').innerHTML = `<h3>${S.mode === 'exam' ? '檢定結果' : MODE[S.mode] + ' 結果'}（${S.meth === 'auto' ? '自動機' : '手動做法'}）</h3><div class="result">
+    <div class="${pass || okMock || (leakStop && !S.major && sc >= PASS) ? 'pass' : 'fail'}">${verdict}</div>
+    <div>分數 <b>${sc}</b> / 100　用時 ${fmt(S.sec)}　提示 ${S.hints} 次</div>${leakNote}
+    <table><tr><td><b>安全</b>（重大缺失）</td><td>${S.major ? '✘ ' + esc(MAJOR[S.major]) : S.majors.length ? '✘ ' + S.majors.map(k => esc(MAJOR[k])).join('；') : '✔ 無'}</td></tr>${cats}</table>
+    ${pass ? `<div class="cert">🎫 <b>抽真空・充填 實車操作資格</b><br>${esc(who.cls)} 第 ${esc(who.grp)} 組・操作者 ${esc(who.op)}<br>檢定碼 <b>${code}</b><br>${new Date().toLocaleString('zh-TW')}<br><span class="hint">把這個畫面給老師看</span></div>` : ''}
+    <div class="row"><button class="pri" id="again">再做一次</button></div></div>`;
+  $('#again').onclick = () => location.reload();
+  if (S.mode === 'exam' && window.Score) Score.submit({ lesson: 'AC-P2', title: `抽真空・充填｜操作者${who.op}｜${pass ? '及格' : leakStop ? '洩漏情境判斷正確（需再檢定）' : '不及格'}${S.major ? '（重大缺失）' : ''}｜提示${S.hints}次`, cls: who.cls, grp: +who.grp,
+    score: sc, total: 100, pct: sc, sec: S.sec, detail: [{ round: '操作者' + who.op, got: sc, of: 100 }].concat(items.map(([a, b]) => ({ round: a.slice(0, 20), got: -b, of: 0 }))), at: new Date().toISOString() })
+    .then(r => log(r.ok ? '成績已上傳。' : '成績未上傳（離線），請給老師看畫面。', r.ok ? 'g' : 'd')).then(render);
+  render();
+}
+
+/* ===== 紀錄卡 ===== */
+function recCard() {
+  const el = $('#recCard'); if (S.end || S.meth === 'auto') { el.style.display = 'none'; return; }
+  let stage = null;
+  if (S.holdDone && !S.recHold) stage = 'hold'; else if (S.inv && S.center === 'can' && !S.recScale && !waived('scaleRec')) stage = 'scale'; else if (running() && !S.recRun) stage = 'run';
+  if (!stage) { el.style.display = 'none'; el.dataset.st = ''; return; }
+  el.style.display = ''; if (el.dataset.st === stage) return; el.dataset.st = stage;
+  const r = rangeOf(S.amb);
+  el.innerHTML = '<h3>📝 紀錄</h3>' + (stage === 'hold' ? `<div class="hint">點錶面放大讀真空度（紅色刻度，每格 76 mmHg）</div>
+      <div class="row">保壓前 <input id="r1" type="number" style="width:80px"> mmHg　5 分鐘後 <input id="r2" type="number" style="width:80px"> mmHg</div>
+      <div class="row"><select id="rJ"><option value="">判斷…</option><option value="ok">真空度不變：密封良好，可以充填</option><option value="leak">真空度變小：有洩漏，停止充填先修復</option></select></div>`
+    : stage === 'scale' ? `<div class="hint">規定充填量 <b>${S.spec} g</b>；讀數會隨冷媒流出而減少</div>
+      <div class="row">起始讀數 <input id="r1" type="number" step="0.01" style="width:90px"> kg</div><div class="row">關閥讀數 <input id="r2" type="number" step="0.01" style="width:90px"> kg</div>`
+    : `<div class="hint">外氣 ${S.amb}℃ 正常範圍（表 6-5）：<br>25℃ 高 930～1130／低 220～270｜30℃ 高 1230～1500／低 290～350｜35℃ 高 1290～1580／低 350～420 kPa</div>
+      <div class="row">高壓 <input id="r1" type="number" style="width:80px"> kPa　低壓 <input id="r2" type="number" style="width:80px"> kPa</div>
+      <div class="row"><select id="rJ"><option value="">判斷…</option><option value="ok">都在正常範圍</option><option value="low">偏低</option><option value="high">偏高</option></select></div>`)
+    + '<div class="row"><button class="pri" id="rGo">送出紀錄</button><span class="hint" id="rMsg"></span></div>';
+  $('#rGo').onclick = () => { const a = +$('#r1').value, b = +$('#r2').value, j = $('#rJ') ? $('#rJ').value : 'x';
+    if (!$('#r1').value || !$('#r2').value || !j) return $('#rMsg').textContent = '請填完再送出';
+    S.lastAct = Date.now();
+    if (stage === 'hold') { const ok1 = Math.abs(a - S.holdMm) <= 15 && Math.abs(b - S.holdEnd) <= 15, ok2 = (j === 'leak') === S.leak; S.recHold = { ok: ok2 };
+      if (!(ok1 && ok2)) ded('holdErr'); log(`保壓紀錄：${a} → ${b} mmHg，判斷「${j === 'leak' ? '有洩漏' : '密封良好'}」${ok1 && ok2 ? '' : '（有誤）'}`, ok1 && ok2 ? 'g' : 'd');
+      if (S.leak && ok2) log('有洩漏：停止充填，按「完成作業」回報老師。', 'g'); }
+    if (stage === 'scale') { const ok = Math.abs(a - S.kg0) < .006 && Math.abs(b - (S.kg0 - S.spec / 1000)) < .006; S.recScale = { a, b };
+      if (!ok) ded('scaleErr'); log(`電子秤：起始 ${a.toFixed(2)} kg、關閥 ${b.toFixed(2)} kg${ok ? '' : '（有誤）'}`, ok ? 'g' : 'd'); }
+    if (stage === 'run') { const p = readP(), ok1 = Math.abs(a - p.H) <= 60 && Math.abs(b - p.L) <= 30, jT = p.H < r[0] || p.L < r[2] ? 'low' : p.H > r[1] || p.L > r[3] ? 'high' : 'ok', ok2 = j === jT;
+      S.recRun = true; if (!(ok1 && ok2)) ded('runErr'); log(`運轉壓力：高 ${a}、低 ${b} kPa，判斷「${{ ok: '正常', low: '偏低', high: '偏高' }[j]}」${ok1 && ok2 ? '' : '（有誤）'}`, ok1 && ok2 ? 'g' : 'd'); }
+    el.dataset.st = ''; after(); };
+}
+
+/* ===== 畫面 ===== */
+function bigGauge(sd, v) {
+  const cx = 500, cy = 310, r = 245, lo = sd === 'L', min = lo ? -101.3 : 0, max = lo ? 1500 : 3500, step = lo ? 20 : 50, lab = lo ? 100 : 500, col = lo ? '#38c6ff' : '#ff5d5d';
+  const A = x => (135 + 270 * (x - min) / (max - min)) * Math.PI / 180, P = (a, rr) => [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr];
+  let t = '';
+  for (let x = 0; x <= max; x += step) { const a = A(x), big = x % lab === 0, [x1, y1] = P(a, r - 6), [x2, y2] = P(a, r - (big ? 30 : 18));
+    t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e6ecf5" stroke-width="${big ? 3 : 1.5}"/>`;
+    if (big) { const [tx, ty] = P(a, r - 52); t += `<text x="${tx}" y="${ty + 6}" fill="#e6ecf5" font-size="18" text-anchor="middle">${x}</text>`; } }
+  if (lo) { for (let m = 0; m <= 760; m += 76) { const a = A(-m / 760 * 101.3), [x1, y1] = P(a, r - 6), [x2, y2] = P(a, r - 22); t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ff8a8a" stroke-width="2"/>`;
+      if (m % 152 === 0) { const [tx, ty] = P(a, r - 40); t += `<text x="${tx}" y="${ty + 5}" fill="#ff8a8a" font-size="13" text-anchor="middle">${m}</text>`; } }
+    let last = -9; for (let T = -10; T <= 55; T += 5) { const g = (R134A.find(e => e[0] === T) ? R134A.find(e => e[0] === T)[1] : null); const gp = g ? (g - .1013) * 1000 : null; if (gp == null || gp < 0 || gp > max) continue;
+      const a = A(gp), [x1, y1] = P(a, r - 84), [x2, y2] = P(a, r - 98); t += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3ad07a" stroke-width="2"/>`;
+      if (a - last > .16) { last = a; const [tx, ty] = P(a, r - 116); t += `<text x="${tx}" y="${ty + 5}" fill="#3ad07a" font-size="15" text-anchor="middle">${T}</text>`; } }
+    t += `<text x="${cx}" y="${cy + 120}" fill="#3ad07a" font-size="15" text-anchor="middle">綠：R-134a 飽和溫度 ℃</text><text x="${cx - 130}" y="${cy + 196}" fill="#ff8a8a" font-size="14" text-anchor="middle">紅：真空 mmHg（每格 76）</text>`; }
+  const a = A(clamp(v, min, max)), [nx, ny] = P(a, r - 40);
+  return `<g data-o="zoomX" style="cursor:zoom-out"><rect width="1000" height="620" fill="#000c"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#0d1526" stroke="${col}" stroke-width="8"/>${t}
+    <text x="${cx}" y="${cy + 80}" fill="#e6ecf5" font-size="18" text-anchor="middle">kPa</text><text x="${cx}" y="${cy - 80}" fill="${col}" font-size="24" font-weight="800" text-anchor="middle">${lo ? '低壓錶' : '高壓錶'}</text>
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="10" fill="#ffb020"/>
+    <text x="${cx}" y="604" fill="#ffb020" font-size="16" text-anchor="middle">點任意處關閉</text></g>`;
+}
+function scene() {
+  const p = readP();
+  const ang = (v, max, vac) => 135 + 270 * clamp((v + vac) / (max + vac), 0, 1);
+  const g = (cx, cy, v, max, vac, col, name, obj) => { const a = ang(v, max, vac) * Math.PI / 180;
+    let t = ''; for (let i = 0; i <= 10; i++) { const b = (135 + 27 * i) * Math.PI / 180; t += `<line x1="${cx + Math.cos(b) * 46}" y1="${cy + Math.sin(b) * 46}" x2="${cx + Math.cos(b) * 38}" y2="${cy + Math.sin(b) * 38}" stroke="#c9d3e0" stroke-width="2"/>`; }
+    return `<g><circle cx="${cx}" cy="${cy}" r="54" fill="#0d1526" stroke="${col}" stroke-width="5"/>${t}<text x="${cx}" y="${cy + 26}" fill="${col}" font-size="13" text-anchor="middle" font-weight="700">${name}</text>
+      <line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(a) * 42}" y2="${cy + Math.sin(a) * 42}" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="#ffb020"/>
+      <text x="${cx}" y="${cy - 62}" fill="#ffb020" font-size="12" text-anchor="middle">🔍 點錶面放大</text><circle data-o="${obj}" cx="${cx}" cy="${cy}" r="56" fill="transparent" style="cursor:zoom-in"/></g>`; };
+  const knob = (x, s, col) => { const open = S.hv[s], dx = open ? (s === 'L' ? -14 : 14) : 0;
+    return `<g data-o="hv${s}" style="cursor:pointer"><rect x="${x - 22 + dx}" y="216" width="44" height="58" rx="9" fill="${col}" stroke="#ffb020" stroke-width="2"/>
+      <text x="${x + dx}" y="250" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">${open ? '開' : '關'}</text><text x="${x + dx}" y="294" fill="#9fb0cf" font-size="12" text-anchor="middle">手動閥</text></g>`; };
+  const hose = (x0, x, y, col) => `<path d="M${x0} 300 C ${x0} 360, ${x} ${y - 90}, ${x} ${y - 20}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round"/><path d="M${x0} 300 C ${x0} 360, ${x} ${y - 90}, ${x} ${y - 20}" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="14 10"/>`;
+  const devY = { rec: 170, pump: 282, can: 410 }, cy = devY[S.center];
+  const center = S.center === 'none' ? `<path d="M500 276 C 500 330, 500 360, 500 400" fill="none" stroke="#e6c229" stroke-width="12" stroke-linecap="round"/><text x="500" y="420" fill="#e6c229" font-size="12" text-anchor="middle">中央軟管（末端開放）</text>`
+    : `<path d="M500 276 C 500 380, 330 ${cy}, 232 ${cy}" fill="none" stroke="#e6c229" stroke-width="12" stroke-linecap="round"/><path d="M500 276 C 500 380, 330 ${cy}, 232 ${cy}" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="14 10"/>`;
+  const kgNow = S.inv ? (S.kg0 - S.got / 1000) : null, liq = clamp(.75 - S.got / 4000, .2, .8);
+  const canBody = S.inv
+    ? `<rect x="92" y="372" width="62" height="96" rx="12" fill="#2d4468"/><rect x="92" y="${468 - 96 * liq}" width="62" height="${96 * liq}" rx="10" fill="rgba(56,198,255,.75)"/><rect x="113" y="468" width="20" height="12" fill="#c9d3e0"/><rect x="108" y="478" width="30" height="7" fill="${S.canOpen ? '#3ad07a' : '#e04848'}"/>`
+    : `<rect x="92" y="384" width="62" height="96" rx="12" fill="#2d4468"/><rect x="92" y="${480 - 96 * liq}" width="62" height="${96 * liq}" rx="10" fill="rgba(56,198,255,.75)"/><rect x="113" y="372" width="20" height="12" fill="#c9d3e0"/><rect x="108" y="366" width="30" height="7" fill="${S.canOpen ? '#3ad07a' : '#e04848'}"/>`;
+  const r = rangeOf(S.amb);
+  return `<rect x="0" y="0" width="1000" height="620" fill="#0d1526"/>
+  <rect x="16" y="14" width="250" height="90" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="28" y="34" fill="#9fb0cf" font-size="13">護具架</text>
+  <g data-o="gog" style="cursor:pointer;opacity:${S.ppe.g ? .3 : 1}"><text x="70" y="82" font-size="38" text-anchor="middle">🥽</text><text x="70" y="98" fill="#e6ecf5" font-size="12" text-anchor="middle">護目鏡</text></g>
+  <g data-o="glv" style="cursor:pointer;opacity:${S.ppe.h ? .3 : 1}"><text x="190" y="82" font-size="38" text-anchor="middle">🧤</text><text x="190" y="98" fill="#e6ecf5" font-size="12" text-anchor="middle">防油污手套</text></g>
+  <rect x="700" y="14" width="284" height="90" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="712" y="34" fill="#9fb0cf" font-size="13">駕駛座</text>
+  <g data-o="acsw" style="cursor:pointer"><rect x="720" y="44" width="74" height="44" rx="8" fill="${S.ac ? '#1f5f3c' : '#2a3448'}" stroke="#ffb020" stroke-width="2"/><text x="757" y="72" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">A/C ${S.ac ? 'ON' : 'OFF'}</text></g>
+  <g data-o="key" style="cursor:pointer"><rect x="806" y="44" width="92" height="44" rx="8" fill="${S.eng ? '#5f3a1f' : '#2a3448'}" stroke="#ffb020" stroke-width="2"/><text x="852" y="72" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">🔑 ${S.eng ? '引擎運轉' : '熄火'}</text></g>
+  <text x="946" y="64" fill="#ffd23f" font-size="13" text-anchor="middle">外氣</text><text x="946" y="84" fill="#ffd23f" font-size="17" font-weight="700" text-anchor="middle">${S.amb}℃</text>
+  <!-- 左側設備 -->
+  <g data-o="rec" style="cursor:pointer"><rect x="20" y="122" width="212" height="96" rx="12" fill="#1f2b42" stroke="${S.center === 'rec' ? '#e6c229' : '#8ea3bf'}" stroke-width="2"/>
+    <text x="126" y="150" fill="#e6ecf5" font-size="16" font-weight="700" text-anchor="middle">冷媒回收機</text><rect x="44" y="160" width="164" height="40" rx="6" fill="#0b2a1a" stroke="#3ad07a"/><text x="126" y="186" fill="#7dffb0" font-size="14" text-anchor="middle">${S.recovered ? '回收完成' : 'READY'}</text></g>
+  <g data-o="pump" style="cursor:pointer"><rect x="20" y="234" width="212" height="96" rx="12" fill="#2a3550" stroke="${S.center === 'pump' ? '#e6c229' : '#8ea3bf'}" stroke-width="2"/>
+    <circle cx="70" cy="282" r="30" fill="#44506a"/>${S.pumpOn ? `<circle cx="70" cy="282" r="22" fill="none" stroke="#c9d3e0" stroke-width="3" stroke-dasharray="10 8"><animateTransform attributeName="transform" type="rotate" from="0 70 282" to="360 70 282" dur="0.6s" repeatCount="indefinite"/></circle>` : ''}
+    <text x="160" y="270" fill="#e6ecf5" font-size="16" font-weight="700" text-anchor="middle">真空泵</text><text x="160" y="294" fill="${S.pumpOn ? '#3ad07a' : '#9fb0cf'}" font-size="14" text-anchor="middle">${S.pumpOn ? '運轉中' : '停止'}</text>
+    <text x="160" y="316" fill="#9fb0cf" font-size="12" text-anchor="middle">隔離閥 ${S.iso ? '開' : '關'}</text></g>
+  <g data-o="can" style="cursor:pointer"><rect x="20" y="346" width="212" height="190" rx="12" fill="#121c30" stroke="${S.center === 'can' ? '#e6c229' : '#8ea3bf'}" stroke-width="2"/>
+    <text x="126" y="364" fill="#9fb0cf" font-size="12" text-anchor="middle">冷媒桶 R-134a（${S.inv ? '倒置' : '正放'}）</text>${canBody}
+    <rect x="56" y="488" width="140" height="12" rx="4" fill="#3b4a66"/><rect x="66" y="504" width="120" height="26" rx="5" fill="#0b2a1a" stroke="#3ad07a"/>
+    <text x="126" y="523" fill="#7dffb0" font-size="17" font-weight="700" text-anchor="middle">${kgNow != null ? kgNow.toFixed(2) + ' kg' : '-.-- kg'}</text></g>
+  <!-- 檢修錶 -->
+  ${g(420, 130, p.L, 1500, 101, '#38c6ff', '低壓', 'gL')}${g(580, 130, p.H, 3500, 0, '#ff5d5d', '高壓', 'gH')}
+  <rect x="414" y="186" width="12" height="30" fill="#8ea3bf"/><rect x="574" y="186" width="12" height="30" fill="#8ea3bf"/>
+  <rect x="320" y="214" width="360" height="62" rx="12" fill="#4b5a72" stroke="#8ea3bf" stroke-width="2"/>
+  <circle cx="500" cy="244" r="15" fill="${S.charging ? '#38c6ff' : '#9fd8ff'}" opacity="${S.charging ? 1 : .7}" stroke="#d8e2f0" stroke-width="2"/><text x="500" y="206" fill="#9fb0cf" font-size="12" text-anchor="middle">檢視窗${S.charging ? '：液態冷媒流過' : ''}</text>
+  ${knob(296, 'L', '#2f8fe0')}${knob(704, 'H', '#e04848')}
+  ${center}${hose(430, 330, 470, '#2f8fe0')}${hose(570, 750, 470, '#e04848')}
+  <line x1="260" y1="520" x2="470" y2="520" stroke="#26507e" stroke-width="24" stroke-linecap="round"/><line x1="560" y1="520" x2="780" y2="520" stroke="#8a3434" stroke-width="12" stroke-linecap="round"/>
+  <rect x="320" y="450" width="20" height="56" fill="#8ea3bf"/><rect x="312" y="430" width="36" height="30" rx="6" fill="#2f8fe0"/><rect x="740" y="456" width="20" height="50" fill="#8ea3bf"/><rect x="732" y="430" width="36" height="30" rx="6" fill="#e04848"/>
+  <text x="330" y="560" fill="#38c6ff" font-size="13" text-anchor="middle">L 接口（已接、切斷閥旋入）</text><text x="750" y="560" fill="#ff7070" font-size="13" text-anchor="middle">H 接口（已接、切斷閥旋入）</text>
+  <!-- 狀態面板 -->
+  <rect x="800" y="122" width="184" height="270" rx="12" fill="#121c30" stroke="#2a3a5c"/><text x="812" y="144" fill="#9fb0cf" font-size="13">狀態</text>
+  <text x="812" y="170" fill="#e6ecf5" font-size="14">抽真空累計 ${S.vacMin} 分鐘</text>
+  <text x="812" y="194" fill="#e6ecf5" font-size="14">規定充填量 ${S.spec} g</text>
+  <text x="812" y="218" fill="${S.charging ? '#38c6ff' : '#e6ecf5'}" font-size="14">${S.charging ? '充填中…' : S.chT ? `已充填（看秤）` : '尚未充填'}</text>
+  <g data-o="hold" style="cursor:pointer"><rect x="812" y="234" width="160" height="40" rx="8" fill="#2a3448" stroke="#ffb020" stroke-width="2"/><text x="892" y="259" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">⏱ 保壓：靜置 5 分鐘</text></g>
+  <g data-o="acset" style="cursor:pointer"><rect x="812" y="284" width="160" height="56" rx="8" fill="#2a3448" stroke="#ffb020" stroke-width="2"/><text x="892" y="306" fill="#fff" font-size="13" font-weight="700" text-anchor="middle">❄ 空調設定</text><text x="892" y="326" fill="#9fb0cf" font-size="11" text-anchor="middle">最冷・內循環・風量最高・開窗</text></g>
+  <text x="812" y="372" fill="#9fb0cf" font-size="11">${S.eng ? '⚙ 引擎運轉：皮帶風扇轉動' : ''}</text>
+  ${S.zoom ? bigGauge(S.zoom, S.zoom === 'L' ? p.L : p.H) : ''}
+  <g data-o="done" style="cursor:pointer"><rect x="830" y="560" width="150" height="46" rx="10" fill="#ffb020"/><text x="905" y="589" fill="#1a1200" font-size="16" font-weight="800" text-anchor="middle">完成作業 ✔</text></g>`;
+}
+function autoScene() {
+  const st = AUTO()[Math.min(S.ai, AUTO().length - 1)];
+  return `<rect width="1000" height="620" fill="#0d1526"/>
+  <rect x="340" y="90" width="320" height="380" rx="16" fill="#1f2b42" stroke="#8ea3bf" stroke-width="3"/>
+  <rect x="370" y="120" width="260" height="110" rx="10" fill="#0b2a1a" stroke="#3ad07a" stroke-width="2"/>
+  <text x="500" y="168" fill="#7dffb0" font-size="26" font-weight="800" text-anchor="middle">${esc(S.ai >= AUTO().length ? '作業完成' : st.scr)}</text><text x="500" y="204" fill="#7dffb0" font-size="15" text-anchor="middle">規定 ${S.spec} g</text>
+  <rect x="380" y="260" width="90" height="170" rx="16" fill="#2f8fe0"/><text x="425" y="452" fill="#9fb0cf" font-size="14" text-anchor="middle">內建冷媒桶</text>
+  <rect x="520" y="300" width="50" height="130" fill="rgba(255,255,255,.15)"/><rect x="520" y="400" width="50" height="30" fill="#c9a23a"/><text x="545" y="452" fill="#9fb0cf" font-size="14" text-anchor="middle">廢油瓶</text>
+  <rect x="590" y="300" width="50" height="130" fill="rgba(255,255,255,.15)"/><rect x="590" y="360" width="50" height="70" fill="#e8d9a0"/><text x="615" y="452" fill="#9fb0cf" font-size="14" text-anchor="middle">新油瓶</text>
+  <path d="M360 300 C 250 320, 230 460, 250 510" fill="none" stroke="#2f8fe0" stroke-width="12"/><path d="M640 300 C 750 320, 770 460, 750 510" fill="none" stroke="#e04848" stroke-width="12"/>
+  <line x1="120" y1="530" x2="460" y2="530" stroke="#26507e" stroke-width="24" stroke-linecap="round"/><line x1="560" y1="530" x2="900" y2="530" stroke="#8a3434" stroke-width="12" stroke-linecap="round"/>
+  <text x="250" y="580" fill="#38c6ff" font-size="14" text-anchor="middle">L 接口</text><text x="750" y="580" fill="#ff7070" font-size="14" text-anchor="middle">H 接口</text>
+  <text x="500" y="60" fill="#e6ecf5" font-size="22" font-weight="800" text-anchor="middle">自動冷媒回收充填機（通用示意）</text>
+  <text x="500" y="500" fill="#ffd23f" font-size="16" text-anchor="middle">第 ${Math.min(S.ai + 1, AUTO().length)} / ${AUTO().length} 步：在右側選擇正確的操作</text>`;
+}
+function renderScene() { $('#sv').innerHTML = S.meth === 'auto' ? autoScene() : scene(); }
+function render() {
+  if (!S) return; renderScene();
+  $('#sMode').textContent = MODE[S.mode] + '｜' + (S.meth === 'auto' ? '自動機' : '手動'); const hb = $('#hintB'); hb.style.display = S.mode === 'guide' || S.end || S.meth === 'auto' ? 'none' : ''; hb.disabled = S.mode === 'exam' && S.hints >= HINT_MAX;
+  hb.textContent = S.mode === 'exam' ? `💡 提示（−5 分，剩 ${HINT_MAX - S.hints} 次）` : '💡 提示（練習不扣分）'; $('#sScore').textContent = S.major ? 0 : score();
+  $('#sPpe').innerHTML = S.meth === 'auto' ? '' : `🥽 ${S.ppe.g ? '✔' : '✘'}　🧤 ${S.ppe.h ? '✔' : '✘'}　引擎 ${S.eng ? '運轉' : '熄火'}　A/C ${S.ac ? 'ON' : 'OFF'}`;
+  recCard();
+  if (!S.end) {
+    if (S.meth === 'auto') renderAuto();
+    else if (S.mode === 'guide') { const nowI = STEPS.findIndex(([k]) => !S.done.has(k) && !waived(k)); $('#stepTitle').textContent = '作業程序（導引）';
+      $('#steps').innerHTML = STEPS.map(([k, s], i) => waived(k) || (k === 'recov' && !S.resid) ? '' : `<li class="${S.done.has(k) ? 'done' : i === nowI ? 'now' : ''}">${esc(s)}${i === nowI ? `<div class="why">💬 ${esc(WHY[k])}</div>` : ''}</li>`).join(''); }
+    else { const w = curWork(); $('#stepTitle').textContent = '📋 工作單';
+      $('#steps').innerHTML = WORK.map((x, i) => { const all = x.k.every(k => S.done.has(k) || waived(k)); return `<li class="wk ${all ? 'done' : i === w ? 'now' : ''}"><b>${esc(x.t)}</b>${all ? ' ✔' : ''}<br><span class="hint">${esc(x.d)}</span></li>`; }).join('')
+        + (S.leak && S.recHold && S.recHold.ok ? '<li class="wk now"><b>⚠ 系統有洩漏</b><br><span class="hint">停止充填，按「完成作業」回報老師</span></li>' : ''); }
+  }
+  $('#hintMsg').innerHTML = S.hintMsg && !S.end ? '💡 ' + esc(S.hintMsg) : '';
+  $('#log').innerHTML = S.log.join('');
+}
+function renderAuto() {
+  const L = AUTO(); $('#stepTitle').textContent = '🖥 自動機操作';
+  if (S.ai >= L.length) { $('#steps').innerHTML = '<li class="done">全部完成！按「完成練習」看結果。</li><li><button class="pri" id="aFin">完成練習</button></li>'; $('#aFin').onclick = finish; return; }
+  const st = L[S.ai], ord = S.aOrd && S.aOrd.i === S.ai ? S.aOrd.o : (S.aOrd = { i: S.ai, o: st.o.map((_, k) => k).sort(() => Math.random() - .5) }).o;
+  const q = st.q.replace(/\{SPEC\}/g, S.spec);
+  $('#steps').innerHTML = `<li style="list-style:none;margin-left:-20px"><b>第 ${S.ai + 1} 步：</b>${esc(q)}</li>` + ord.map(k => `<li style="list-style:none;margin-left:-20px"><button data-k="${k}" style="width:100%;text-align:left;margin:4px 0">${esc(st.o[k][0].replace(/\{SPEC\}/g, S.spec))}</button></li>`).join('') + `<li style="list-style:none;margin-left:-20px" class="hint" id="aFb"></li>`;
+  $('#steps').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const o = st.o[+b.dataset.k]; S.lastAct = Date.now();
+    if (o[1]) { log(`✔ ${o[0].replace(/\{SPEC\}/g, S.spec)}`, 'g'); S.ai++; S.aOrd = null; render(); if (S.mode === 'guide') $('#aFb') && 0; }
+    else { S.ded['autoWrong' + S.ai] = 5; DED['autoWrong' + S.ai] = [`第 ${S.ai + 1} 步選錯`, 5]; CAT.程序.push('autoWrong' + S.ai); log(`✘ ${o[0]}：${o[2]}`, 'd'); b.disabled = true; $('#aFb').innerHTML = `✘ ${esc(o[2])}`; $('#sScore').textContent = score(); $('#log').innerHTML = S.log.join(''); } });
+}
+$('#sv').addEventListener('click', e => { const t = e.target.closest('[data-o]'); const b = $('#sv').getBoundingClientRect(), x = (e.clientX - b.left) * 1000 / b.width, y = (e.clientY - b.top) * 1000 / b.width;
+  $('#menu').style.display = 'none'; if (t) act(t.dataset.o, x, y); });
+$('#hintB').onclick = () => { if (!S || S.end) return; const n = nextStep(); if (!n) return;
+  if (S.mode === 'exam') { if (S.hints >= HINT_MAX) return; S.hints++; S.ded['hint' + S.hints] = 5; DED['hint' + S.hints] = ['使用提示卡（第 ' + S.hints + ' 次）', 5]; CAT.提示.push('hint' + S.hints); }
+  S.hintMsg = HINT[n[0]] || ''; S.hintStep = n[0]; S.lastAct = Date.now(); render(); };
+
+/* ===== 開始畫面 ===== */
+function setup() {
+  const CLS = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車三甲'];
+  $('#setup').innerHTML = `<h3>開始</h3>
+    <div class="row">班級 <select id="cS">${CLS.map(c => `<option ${c === who.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+      組別 <input id="gS" type="number" min="1" max="30" value="${esc(who.grp || 1)}" style="width:64px">
+      操作者 <select id="oS">${[1, 2, 3].map(n => `<option ${String(n) === who.op ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="row">練習做法 <select id="mS"><option value="man">手動做法（真空泵＋電子秤）</option><option value="auto">自動回收充填機</option></select></div>
+    <div class="row"><button id="bG">🧭 練習 1：導引</button><button id="bP">📋 練習 2：工作單</button><button class="pri" id="bE">🎫 檢定（手動，15 分鐘）</button></div>
+    <div class="hint">練習可以選做法；<b>檢定只考手動做法</b>。檢定：💡 提示卡每次 −5 分、最多 3 次（用超過 2 次不及格）；重大缺失立即不及格；80 分以上及格，成績上傳給老師。<br>每次情境都不同：外氣溫度、規定充填量、系統有沒有殘留冷媒、有沒有洩漏。</div>`;
+  const go = mode => { who.cls = $('#cS').value; who.grp = String(Math.min(30, Math.max(1, Math.round(+$('#gS').value || 1)))); who.op = $('#oS').value; const meth = mode === 'exam' ? 'man' : $('#mS').value;
+    store.set('act_cls', who.cls); store.set('act_grp', who.grp); store.set('p1_op', who.op);
+    $('#setup').innerHTML = `<h3>${esc(who.cls)} 第 ${esc(who.grp)} 組・操作者 ${esc(who.op)}</h3><div class="hint">${meth === 'auto' ? '在右側選擇每一步的正確操作。' : '點畫面上的物件（護具、錶面、手動閥、回收機、真空泵、冷媒桶、駕駛座、狀態面板）選擇動作。'}</div><div class="row"><button id="bR">↺ 重新開始</button></div>`;
+    $('#bR').onclick = () => location.reload(); fresh(mode, meth); };
+  $('#bG').onclick = () => go('guide'); $('#bP').onclick = () => go('mock'); $('#bE').onclick = () => go('exam');
+}
+setup();
+S = null; $('#sv').innerHTML = '<rect width="1000" height="620" fill="#0d1526"/><text x="500" y="280" fill="#e6ecf5" font-size="30" font-weight="700" text-anchor="middle">抽真空・保壓・定量充填</text><text x="500" y="330" fill="#9fb0cf" font-size="18" text-anchor="middle">先在右側選擇班級、組別、操作者與練習做法</text>';
+$('#steps').innerHTML = WORK.map(x => `<li class="wk"><b>${esc(x.t)}</b><br><span class="hint">${esc(x.d)}</span></li>`).join('');
+window.__S = () => S; window.__act = (o, x = 500, y = 300) => act(o, x, y); window.__fresh = (m, meth) => fresh(m, meth);
+
+</script></body></html>

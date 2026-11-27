@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第3次 冷媒回收抽真空充填｜車輛空調檢修實習 上課簡報</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d;
+--自學:#38c6ff;--共學:#3ddc84;--互學:#ffd166;--導學:#ff8a3d;--評量:#c79bff;--準備:#9fb0cf}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#050a14;color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:var(--bg);border-radius:6px;overflow:hidden;padding:84px 64px 56px;display:none}
+.slide.on{display:flex;flex-direction:column;justify-content:center;animation:fin .35s ease}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 頁首 */
+.shead{position:absolute;left:64px;right:64px;top:22px;display:flex;align-items:center;gap:12px;font-size:17px;color:var(--mut)}
+.chip{font-weight:700;border-radius:20px;padding:4px 14px;font-size:17px;color:#0d1526}
+.tchip{border:1px solid var(--line);border-radius:20px;padding:3px 12px;font-size:16px;color:var(--mut)}
+.shead .lesson{margin-left:auto}
+.sfoot{position:absolute;left:64px;right:64px;bottom:16px;display:flex;align-items:center;gap:10px;font-size:14px;color:#5f7299}
+.sfoot .prog{flex:1;height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}.sfoot .prog i{display:block;height:100%;background:var(--acc)}
+/* 文字 */
+h1{font-size:54px;margin:0 0 18px;line-height:1.25}
+h2{font-size:46px;margin:0 0 26px;line-height:1.3}
+h3{font-size:28px;margin:0 0 12px;color:var(--acc)}
+p,li{font-size:28px;line-height:1.6;margin:0 0 10px}
+.mut{color:var(--mut)}.acc{color:var(--acc)}.blue{color:var(--acc2)}.green{color:var(--ok)}.red{color:var(--bad)}
+.small{font-size:20px}
+ul.clean{list-style:none;padding:0;margin:0}ul.clean li{padding-left:34px;position:relative}ul.clean li:before{content:"▸";position:absolute;left:4px;color:var(--acc)}
+/* 版面元件 */
+.row{display:flex;gap:24px}.col{flex:1;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card.hl{border-color:var(--acc)}
+.card .em{font-size:56px;line-height:1;margin-bottom:10px}
+.card h4{margin:0 0 6px;font-size:28px}
+.card p{font-size:23px;margin:0}
+.box{background:var(--panel);border:2px solid var(--acc);border-radius:16px;padding:20px 26px}
+.prompt{background:#0a1120;border:1px dashed var(--acc2);border-radius:12px;padding:16px 20px 52px;font-size:24px;line-height:1.6;position:relative}
+.copy{position:absolute;right:12px;bottom:10px;font-size:16px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit}
+table.t{width:100%;border-collapse:separate;border-spacing:0 8px}
+table.t th{font-size:26px;background:#2a3b5e;padding:10px 14px;text-align:center}
+table.t td{font-size:26px;background:var(--panel);padding:13px 14px;text-align:center}
+table.t th:first-child,table.t td:first-child{border-radius:10px 0 0 10px}table.t th:last-child,table.t td:last-child{border-radius:0 10px 10px 0}
+table.t td:first-child{font-weight:700;background:#1f2e4d}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;padding-left:54px;position:relative;margin-bottom:16px;font-size:27px}
+.steps li:before{content:counter(s);position:absolute;left:0;top:2px;width:38px;height:38px;border-radius:50%;background:var(--acc);color:#1a1200;font-weight:700;display:grid;place-items:center;font-size:20px}
+.flow{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+.flow .node{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 24px;font-size:28px;font-weight:700;text-align:center}
+.flow .arr{font-size:34px;color:var(--mut)}
+.tl{display:flex;gap:8px;margin-top:10px}.tl div{border-radius:10px;padding:10px 8px;text-align:center;font-size:18px;color:#0d1526;font-weight:700}
+.tl div small{display:block;font-weight:400;font-size:15px}
+/* 按鈕連結 */
+a.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:#1a1200;font-weight:700;text-decoration:none;border-radius:12px;padding:12px 20px;font-size:22px;margin:6px 10px 6px 0}
+a.btn.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+a.btn.off{background:#2a2f3a;color:#7c8598;border:1px dashed #4a5263;pointer-events:none}
+/* 嵌入動畫 */
+.embed{position:absolute;left:64px;right:64px;top:76px;bottom:44px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a1120}
+.embed iframe{width:100%;height:100%;border:0}
+/* 逐步顯示 */
+.frag{transition:opacity .35s,transform .35s}
+.frag.hid{opacity:0;transform:translateY(6px)}
+.kw{color:var(--acc);font-weight:700;border-bottom:3px solid var(--acc);padding:0 6px;transition:color .3s}
+.kw.frag.hid{opacity:1;transform:none;color:transparent}
+/* 封面 */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%}
+.cover .tag{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;border-radius:8px;padding:6px 14px;font-size:22px;margin-bottom:18px;width:max-content}
+/* 計時器 */
+.timer{position:absolute;right:64px;top:10px;background:var(--panel);border:2px solid var(--acc2);border-radius:12px;padding:2px 14px;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;z-index:5;user-select:none}
+.timer.run{border-color:var(--ok)}.timer.done{border-color:var(--bad);color:var(--bad);animation:blink 1s infinite}
+.timer small{display:block;font-size:12px;color:var(--mut);font-weight:400;text-align:center}
+@keyframes blink{50%{opacity:.4}}
+/* 控制列與覆蓋層（不在 stage 內，不會被縮放） */
+#ctrl{position:fixed;right:14px;bottom:12px;display:flex;gap:6px;opacity:.25;transition:opacity .3s;z-index:20}
+#ctrl:hover{opacity:1}
+#ctrl button,#ctrl a{background:#1d2c4a;color:#e8eef9;border:1px solid #2c3f63;border-radius:8px;padding:7px 11px;font-size:15px;cursor:pointer;text-decoration:none;font-family:inherit}
+#notes{position:fixed;left:12px;right:12px;bottom:58px;max-height:34vh;overflow:auto;background:rgba(10,17,32,.96);border:1px solid #ffb020;border-radius:12px;padding:12px 16px;font-size:17px;line-height:1.6;display:none;z-index:19}
+#notes.show{display:block}#notes b{color:#ffb020}
+#ov{position:fixed;inset:0;background:rgba(5,10,20,.95);display:none;z-index:30;overflow:auto;padding:30px}
+#ov.show{display:block}
+#ov .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+#ov .it{background:#16223a;border:1px solid #2c3f63;border-radius:10px;padding:12px;cursor:pointer;font-size:16px}
+#ov .it:hover,#ov .it.cur{border-color:#ffb020}
+#ov .it b{display:block;color:#9fb0cf;font-size:13px;margin-bottom:4px}
+#qr{display:grid;place-items:center;background:#fff;border-radius:12px;padding:12px;width:max-content}
+.hastimer .shead .lesson{margin-right:150px}
+.slide.embedslide{display:none}.slide.embedslide.on{display:block}
+.card > b{font-size:21px;display:block;margin-bottom:4px}
+</style></head><body>
+<div id="stage">
+<section class="slide nohead" data-title="封面">
+  <div class="cover">
+    <span class="tag">車輛空調檢修實習｜單元 B 冷媒回收及充填｜第 3 次（3 節，150 分）</span>
+    <h1 style="font-size:56px">第 3 次　回收 → 抽真空 → 充填</h1>
+    <p class="mut" style="font-size:24px">本次目標：說出回收、抽真空、保壓、定量充填的程序與目的 ・ 讀真空度與電子秤 ・ 依程序安全完成一段實車作業</p>
+    <div class="tl" style="margin-top:28px">
+      <div style="flex:5;background:#9fb0cf">準備<small>5</small></div>
+      <div style="flex:10;background:#ff8a3d">導學<small>10 安全</small></div>
+      <div style="flex:30;background:#38c6ff">自學<small>30 V5</small></div>
+      <div style="flex:15;background:#ff8a3d">導學<small>15 示範回收</small></div>
+      <div style="flex:70;background:#3ddc84">共學・實作<small>70 P2 檢定 → 接力上車</small></div>
+      <div style="flex:10;background:#ffd166">互學<small>10</small></div>
+      <div style="flex:10;background:#c79bff">評量<small>10</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="準備" data-time="5" data-title="課前準備：接力的方式"
+  data-notes="今天每台車跑一次完整流程，但分成三段，由不同組接力完成；每組只負責一段，紀錄寫在學習單。上車仍然是一人操作、一人拿實作檢核表監督。第 2 次沒輪到上車的組（預設第 10、11 組）今天優先到架上引擎站補做接錶。發下第 3 次學習單與實作檢核表。">
+  <h2>今天的車由三組「接力」完成 🏃‍♂️➡️🏃</h2>
+  <div class="row">
+    <div class="col">
+      <div class="grid3" style="margin-bottom:22px">
+        <div class="card"><div class="em">①</div><h4>第 1 段</h4><p>接管・回收<br>或 抽真空</p></div>
+        <div class="card"><div class="em">②</div><h4>第 2 段</h4><p>抽真空・保壓<br>・充填準備</p></div>
+        <div class="card"><div class="em">③</div><h4>第 3 段</h4><p>充填・啟動檢查<br>・收尾</p></div>
+      </div>
+      <p>每組負責<b class="acc">一段</b>，把讀數交接給下一組（寫在學習單）。<br>仍然是<b class="acc">一人操作、一人拿檢核表監督</b>，做完互換。</p>
+      <a class="btn" href="index.html" target="_blank">🏠 課程首頁</a><a class="btn sec" data-link="classroom">📚 Google Classroom</a>
+    </div>
+    <div style="width:290px;text-align:center">
+      <div id="qr" style="margin:0 auto"></div>
+      <p class="small mut" style="margin-top:8px">掃描開啟本次簡報</p>
+      <p id="qrurl" class="mut" style="font-size:12px;word-break:break-all"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="5" data-title="安全一：今天的危險在哪裡"
+  data-notes="今天會直接接觸冷媒桶與液態冷媒。重點：排空氣 1～2 秒內完成；液態充填時不可發動引擎、不可開低壓手動閥（液擠損壞壓縮機）；系統有壓力不可接真空泵抽真空；冷媒一律回收，不可排放。">
+  <h2>⚠️ 今天的四個危險動作</h2>
+  <div class="grid2">
+    <div class="card frag"><div class="em">🥶</div><h4>排空氣太久</h4><p>中央軟管接頭鬆開 <b class="acc">1～2 秒</b>就鎖緊<br>護目鏡、手套一定要戴</p></div>
+    <div class="card frag"><div class="em">💥</div><h4>液態充填時發動引擎</h4><p>液態冷媒進壓縮機 → <b class="red">液擠損壞</b><br>也不可打開<b class="red">低壓手動閥</b></p></div>
+    <div class="card frag"><div class="em">⚙️</div><h4>有壓力就抽真空</h4><p>先讀錶確認<b class="acc">沒有壓力</b><br>否則真空泵損壞、冷媒排放</p></div>
+    <div class="card frag"><div class="em">♻️</div><h4>冷媒排放</h4><p>手動閥、桶閥開著就拆軟管<br>冷媒<b class="green">一律回收</b></p></div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="5" data-title="安全二：上車資格"
+  data-notes="上車資格：本人通過 P2 檢定（拿到檢定碼）＋護具＋搭檔監督。P2 檢定只考手動做法（真空泵＋電子秤）；自動機只在練習模式。若檢定抽到洩漏情境並判斷正確，系統不會發資格碼，要再檢定一次。">
+  <h2>🎫 上車資格：三個條件都要有</h2>
+  <div class="grid3">
+    <div class="card hl frag"><div class="em">🎫</div><h4>P2 檢定碼</h4><p>本人通過 P2 檢定<br>（手動做法，80 分、無重大缺失）</p></div>
+    <div class="card hl frag"><div class="em">🥽🧤</div><h4>護目鏡＋手套</h4><p>摸到冷媒部件前<br>就要戴好</p></div>
+    <div class="card hl frag"><div class="em">📋</div><h4>搭檔監督</h4><p>搭檔拿實作檢核表<br>逐項打勾</p></div>
+  </div>
+  <p class="frag" style="margin-top:24px">✋ 看到<b class="red">重大缺失</b> → 監督者立刻喊「<b class="red">停</b>」，舉手找老師。</p>
+</section>
+
+<section class="slide" data-tag="自學" data-time="30" data-timer="1800" data-title="自學：V5 冷媒回收・抽真空・充填"
+  data-notes="各組用平板看 V5（12 段）。三個互動段：真空與沸點（試 4 種真空度＋切換溫度）、保壓測試（判斷 2 台）、看秤充填（成功 2 次）。完成後畫面會出現「前往下一段」。看完的組可以先開始 P2 練習 1（導引）。">
+  <div class="embed"><iframe data-src="V5_冷媒回收抽真空充填.html?embed=1&v=11271443" title="V5 冷媒回收・抽真空・充填"></iframe></div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="10" data-title="教師示範：冷媒回收"
+  data-notes="在實車 B 示範回收（課前先做好冷凍油回流：怠速、A/C ON 最冷、內循環、鼓風機最高 10 分鐘後熄火）。邊做邊說：錶會降到負壓是正常；記錄回收量與廢油量。示範完實車 B 系統已空，第 1 輪可直接接真空泵抽真空。">
+  <h2>🔧 示範：用回收機回收冷媒</h2>
+  <ol class="steps" style="columns:2;column-gap:40px">
+    <li class="frag">回收前：<b class="acc">冷凍油回流</b> 10 分鐘後 A/C OFF、熄火</li>
+    <li class="frag">檢查廢油瓶、接電源，確認無異常訊息</li>
+    <li class="frag">設備<b class="red">紅色接 H</b>、<b class="blue">藍色接 L</b></li>
+    <li class="frag">依序<b class="acc">旋入</b>低壓、高壓切斷閥，錶上升到合理值</li>
+    <li class="frag">選 <b class="acc">RECOVER</b> 開始回收</li>
+    <li class="frag">壓力下降甚至<b class="acc">負壓</b>：正常現象</li>
+    <li class="frag">記錄<b class="acc">冷媒回收量 g</b>、<b class="acc">廢油量 ml</b></li>
+    <li class="frag">回到主選單；需要時拆管進行維修</li>
+  </ol>
+</section>
+
+<section class="slide" data-tag="導學" data-time="5" data-title="手動做法重點與重大缺失"
+  data-notes="這頁就是 P2 檢定與實作檢核表的重點：抽真空 15 分鐘以上、757 mmHg 以上；保壓 5 分鐘；排空氣 1～2 秒；桶倒置液態充填；關閥讀數＝起始讀數－規定量；啟動後 A/C OFF→ON→OFF 3 次；最後緩開低壓閥 ≤280 kPa。">
+  <div class="grid2">
+    <div class="card" style="padding:14px 18px"><h3>🧰 手動做法（真空泵＋電子秤）</h3>
+      <ol class="steps" style="font-size:17px;line-height:1.45"><li>確認系統<b class="acc">沒有壓力</b> → 接真空泵、手動閥全開</li><li>抽 <b class="acc">15 分鐘以上</b>、<b class="acc">757 mmHg</b> 以上</li><li>關閥<b class="acc">保壓 5 分鐘</b>：真空度不變才充填</li><li>接冷媒桶、排空氣 <b class="acc">1～2 秒</b>、桶<b class="acc">倒置</b></li><li>開<b class="red">高壓</b>手動閥，秤到規定量關閥</li><li>發動，A/C <b class="acc">OFF→ON→OFF ×3</b>，讀錶判斷</li><li>緩開低壓閥（<b class="acc">≤280 kPa</b>）→ 關閥、熄火</li></ol></div>
+    <div class="card hl" style="padding:14px 18px"><h3 class="red">⛔ 重大缺失（直接不及格）</h3>
+      <ul class="clean" style="font-size:17px;line-height:1.45">
+        <li class="frag">沒戴<b>護目鏡、手套</b>就操作冷媒部件</li>
+        <li class="frag">系統<b>有壓力</b>就抽真空</li>
+        <li class="frag">冷媒<b>排放</b>（排空氣太久、閥開著就拆軟管）</li>
+        <li class="frag">液態充填時<b>發動引擎</b>或<b>開低壓閥</b></li>
+        <li class="frag">引擎運轉中開<b>高壓</b>手動閥</li>
+        <li class="frag">保壓<b>有洩漏</b>仍繼續充填</li>
+      </ul></div>
+  </div>
+</section>
+
+<section class="slide" data-tag="共學" data-time="5" data-title="輪站說明：四個站"
+  data-notes="數位站不限組數：先做 P2 檢定（上車門票），再做 V5 互動段與學習單。三個車輛站每輪 1 組、每組負責一段。輪站前 10 分鐘全部做 P2 檢定，老師趁這時候讓實車 A 跑冷凍油回流、確認設備。抽真空 15 分鐘以上剛好落在一輪 20 分鐘內。">
+  <h2 style="margin-bottom:10px">🔄 輪站：一個數位站＋三個車輛站</h2>
+  <div class="grid4" style="font-size:16px">
+    <div class="card" style="padding:10px 14px"><h4>📱 數位站</h4><p><b class="acc">P2</b> 檢定（上車門票）・V5・學習單</p></div>
+    <div class="card" style="padding:10px 14px"><h4>🚗 A 實車 A</h4><p><b class="acc">自動回收充填機</b></p></div>
+    <div class="card" style="padding:10px 14px"><h4>🚙 B 實車 B</h4><p><b class="acc">真空泵＋電子秤</b></p></div>
+    <div class="card" style="padding:10px 14px"><h4>⚙️ C 架上引擎</h4><p>上次沒上車的組<b class="acc">補做接錶</b></p></div>
+  </div>
+  <style>#segTab td,#segTab th{font-size:16px;padding:6px 8px}</style><table class="t frag" id="segTab" style="margin-top:12px">
+    <tr><th></th><th>第 1 段</th><th>第 2 段</th><th>第 3 段</th></tr>
+    <tr><td>🚗 A 自動機</td><td>接管・旋入切斷閥・RECOVER・記錄</td><td>VACUUM ≥15 分・確認真空度・補油設定</td><td>CHARGE・啟動檢查・管路平衡・拆管</td></tr>
+    <tr><td>🚙 B 手動</td><td>確認無壓力・接真空泵・抽真空 ≥15 分</td><td>關閥保壓 5 分・接冷媒桶・排空氣・倒置</td><td>高壓側充填・OFF→ON→OFF・吸回殘留・熄火</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-tag="共學" data-time="65" data-timer="3900" data-title="輪站時間表"
+  data-notes="時間表依組數自動排：車輛站 C 先給第 2 次沒上車的組（可修改），其餘組依序排到 A、B。輪到時若該組兩人還沒都通過 P2（C 站是 P1），就和下一個已通過的組交換。沒排到車的組下次優先。可輸入開始時刻顯示實際時間。">
+  <h2 style="margin-bottom:8px">🗓️ 輪站時間表（<span id="rsN">11</span> 組）</h2>
+  <div class="row" style="gap:16px;align-items:center;margin-bottom:10px;font-size:20px">
+    <label>組數 <input id="rsG" type="number" min="2" max="30" value="11" style="width:70px;font-size:20px"></label>
+    <label>上次沒上車 <input id="rsP" type="text" value="10,11" style="width:110px;font-size:20px"></label>
+    <label>開始時刻 <input id="rsT" type="time" style="font-size:20px"></label>
+  </div>
+  <style>#rsTab th{font-size:20px;padding:7px 10px}#rsTab td{font-size:20px;padding:7px 10px}#rsTab td.small{font-size:17px}</style>
+  <table class="t" id="rsTab"></table>
+  <p class="small" style="margin-top:8px;font-size:18px">🔁 輪到時還沒通過檢定 → 和下一個<b class="acc">已通過</b>的組交換　｜　📱 不在車輛站的組：數位站做 <b class="acc">P2 → V5 互動段 → 學習單</b></p>
+  <script>
+  (function () {
+    const g = document.getElementById('rsG'), pr = document.getElementById('rsP'), tm = document.getElementById('rsT'), tab = document.getElementById('rsTab');
+    const ST = ['🚗 A 自動機', '🚙 B 手動', '⚙️ C 補做接錶'], SEG = ['第 1 段', '第 2 段', '第 3 段'], R = 3, SLOT = 20, PRE = 10;
+    const clk = m => { if (!tm.value) return `${m}′`; const [h, mm] = tm.value.split(':').map(Number), t = h * 60 + mm + m; return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
+    function draw() {
+      const n = Math.max(2, Math.min(30, +g.value || 11)); document.getElementById('rsN').textContent = n;
+      const pri = (pr.value.match(/\d+/g) || []).map(Number).filter(k => k >= 1 && k <= n);
+      const rest = []; for (let k = 1; k <= n; k++) if (!pri.includes(k)) rest.push(k);
+      const C = [], AB = []; let q = rest.slice();
+      for (let r = 0; r < R; r++) { C.push(pri[r] ?? null); }
+      for (let r = 0; r < R; r++) { AB.push([q.shift() ?? null, q.shift() ?? null]); }
+      for (let r = 0; r < R; r++) if (C[r] == null) C[r] = q.shift() ?? null;
+      let h = `<tr><th>時段</th>${ST.map(s => `<th>${s}</th>`).join('')}<th>📱 數位站</th></tr>`;
+      h += `<tr><td>${clk(0)}～${clk(PRE)}</td><td colspan="3" class="mut small">老師：實車 A 冷凍油回流、檢查設備</td><td class="small">全部組：<b class="acc">P2 檢定</b></td></tr>`;
+      for (let r = 0; r < R; r++) { const a = PRE + r * SLOT, b = a + SLOT, on = [AB[r][0], AB[r][1], C[r]], busy = on.filter(Boolean), others = n - busy.length;
+        h += `<tr><td>${clk(a)}～${clk(b)}</td>${on.map((k, i) => `<td style="font-size:24px">${k ? `<b class="acc">第 ${k} 組</b>${i < 2 ? `<br><span class="small mut">${SEG[r]}</span>` : ''}` : '—'}</td>`).join('')}<td class="small">其餘 ${others} 組：P2 → V5 → 學習單</td></tr>`; }
+      if (q.length) h += `<tr><td colspan="5" class="small">⭐ 第 ${q.join('、')} 組：本次在數位站完成 P2 檢定，<b class="acc">下次課優先上車</b></td></tr>`;
+      tab.innerHTML = h; }
+    g.oninput = draw; pr.oninput = draw; tm.oninput = draw; draw();
+  })();
+  </script>
+</section>
+
+<section class="slide" data-tag="共學" data-title="數位站：P2 檢定"
+  data-notes="P2 三層：練習 1 導引 → 練習 2 工作單（可切換手動／自動機）→ 檢定（手動，15 分鐘）。每次情境隨機：外氣、規定充填量、系統是否有殘留冷媒、是否洩漏。兩位操作者各自檢定、各拿檢定碼。教師大螢幕選「P2」看各組成績。">
+  <h2>📱 數位站：P2 抽真空・保壓・定量充填</h2>
+  <div class="grid2">
+    <div class="card hl"><h3>🎫 P2 虛擬實作</h3>
+      <ol class="steps"><li>練習 1：<b class="acc">導引</b>（每步提示，可選手動／自動機）</li><li>練習 2：<b class="acc">工作單</b>（同檢定畫面）</li><li><b class="acc">檢定</b>：手動做法，15 分鐘，80 分及格</li></ol>
+      <p class="small mut">每次情境不同：可能還有殘留冷媒、可能有洩漏</p>
+      <a class="btn" href="P2_虛擬實作_抽真空保壓充填.html?v=11271443" target="_blank">🎫 開啟 P2</a></div>
+    <div class="card"><h3>📝 等待時</h3>
+      <ul class="clean"><li>V5 三個互動段再練一次</li><li>學習單：真空與沸點、電子秤計算</li><li>上一組交接的讀數抄到學習單</li></ul>
+      <a class="btn sec" href="V5_冷媒回收抽真空充填.html?v=11271443" target="_blank">▶ 開啟 V5</a></div>
+  </div>
+</section>
+
+<section class="slide" data-tag="共學" data-title="車輛站：接力紀錄"
+  data-notes="每段做完，把讀數寫在學習單的接力紀錄表，下一組接手前先看。回收量、廢油量決定補油量；保壓前後真空度判斷能不能充填；電子秤讀數決定何時關閥；運轉壓力對照正常範圍。">
+  <h2>📝 接力紀錄：交給下一組的讀數</h2>
+  <table class="t">
+    <tr><th>段</th><th>要記錄的讀數</th><th>交接時要說的話</th></tr>
+    <tr><td>第 1 段</td><td>冷媒回收量 ＿＿ g、廢油量 ＿＿ ml／真空度 ＿＿ mmHg、已抽 ＿＿ 分</td><td>「回收完成／已抽幾分鐘，閥目前是開還是關」</td></tr>
+    <tr><td>第 2 段</td><td>保壓前 ＿＿、5 分後 ＿＿ mmHg；起始讀數 ＿＿ kg、關閥讀數 ＿＿ kg</td><td>「有沒有洩漏；冷媒桶已倒置、排過空氣」</td></tr>
+    <tr><td>第 3 段</td><td>實際充填 ＿＿ g；運轉高壓 ＿＿、低壓 ＿＿ kPa（外氣 ＿＿℃）</td><td>「壓力在不在正常範圍；閥都關了、已熄火」</td></tr>
+  </table>
+  <p class="frag" style="margin-top:16px">🔎 關閥讀數 ＝ 起始讀數 － 規定充填量　｜　外氣 25℃ 正常：高壓 <b class="red">930～1130</b>、低壓 <b class="blue">220～270</b> kPa</p>
+</section>
+
+<section class="slide" data-tag="互學" data-time="10" data-title="互學挑戰：V5"
+  data-notes="各組在 V5 右上角按「互學挑戰」，選班級＋組別。四關：手動做法排序、可以／禁止分類、步驟與目的配對、計算與判斷。教師開啟教師大螢幕看排行榜。">
+  <h2>🎮 互學挑戰</h2>
+  <ol class="steps">
+    <li>開 V5，右上角按 <b class="green">🎮 互學挑戰</b></li>
+    <li>選<b class="acc">班級＋組別</b>，兩人<b class="acc">輪流操作</b></li>
+    <li>四關：排序・分類・配對・計算，討論出共識再按</li>
+  </ol>
+  <a class="btn" href="V5_冷媒回收抽真空充填.html?act&v=11271443" target="_blank">V5 互學挑戰</a><a class="btn sec" href="T_教師大螢幕.html" target="_blank">🏆 教師大螢幕</a>
+</section>
+
+<section class="slide" data-tag="評量" data-time="10" data-title="收尾：今天學到什麼"
+  data-notes="各組各說一句。出口票：學習單最後一題。預告第 4 次：單元 C 壓縮機更換。這次沒排到車的組下次優先上車。收回實作檢核表與學習單。">
+  <h2>✅ 今天的三個重點</h2>
+  <div class="grid3">
+    <div class="card frag"><div class="em">♻️</div><h4>先回收</h4><p>冷凍油回流 → 回收<br>記錄回收量、廢油量<br>冷媒<b class="acc">不可排放</b></p></div>
+    <div class="card frag"><div class="em">🌀</div><h4>抽真空＋保壓</h4><p>真空讓水<b class="acc">低溫沸騰</b>被抽走<br>≥757 mmHg、≥15 分<br>保壓 5 分不變才充填</p></div>
+    <div class="card frag"><div class="em">⚖️</div><h4>定量充填</h4><p>高壓側液態充填<br>看秤到量就關閥<br>OFF→ON→OFF 防液擠</p></div>
+  </div>
+  <p class="frag" style="margin-top:20px"><a class="btn" href="Q3_第3次隨堂測驗.html?v=11271443" target="_blank">📝 Q3 個人隨堂測驗</a><a class="btn sec" href="T_教師大螢幕.html?lesson=AC-Q3" target="_blank">🏆 教師大螢幕（Q3）</a></p>
+  <p class="frag" style="margin-top:16px">📣 下次（第 4 次）：<b class="acc">驅動皮帶與冷媒管路</b>；這次沒排到車的組<b class="acc">優先上車</b>。</p>
+</section>
+</div>
+<script>window.LINKS={};window.LESSON='車輛空調檢修實習｜第 3 次\u3000冷媒回收・抽真空・充填';</script>
+<script src="links.js"></script>
+<script>/* 網頁式簡報框架（共用） */
+(function () {
+  const TAGC = { 自學: '#38c6ff', 共學: '#3ddc84', 互學: '#ffd166', 導學: '#ff8a3d', 評量: '#c79bff', 準備: '#9fb0cf', 議題: '#5ee0d0' };
+  const stage = document.getElementById('stage'), slides = [...stage.querySelectorAll('.slide')], L = window.LINKS || {}, LESSON = window.LESSON || '';
+  let cur = 0;
+  // 連結按鈕：data-link 對應 LINKS 設定；未設定則顯示「連結待設定」
+  document.querySelectorAll('a[data-link]').forEach(a => {
+    const u = L[a.dataset.link]; a.target = '_blank'; a.rel = 'noopener';
+    if (u) a.href = u; else { a.classList.add('off'); a.title = '請在檔案開頭 LINKS 設定網址'; a.innerHTML += '<small style="font-size:14px">（待設定）</small>'; }
+  });
+  // 嵌入動畫：延遲載入
+  slides.forEach((s, i) => {
+    const tag = s.dataset.tag, time = s.dataset.time;
+    const h = document.createElement('div'); h.className = 'shead';
+    h.innerHTML = (tag ? `<span class="chip" style="background:${TAGC[tag] || '#9fb0cf'}">${tag}</span>` : '') + (time ? `<span class="tchip">⏱ ${time} 分鐘</span>` : '') + `<span class="lesson">${LESSON}</span>`;
+    if (!s.classList.contains('nohead')) s.prepend(h);
+    const f = document.createElement('div'); f.className = 'sfoot'; f.innerHTML = `<span>${i + 1} / ${slides.length}</span><span class="prog"><i style="width:${(i + 1) / slides.length * 100}%"></i></span>`; s.append(f);
+    if (s.querySelector('.embed')) s.classList.add('embedslide');
+    if (s.dataset.timer) { s.classList.add('hastimer'); const tm = document.createElement('div'); tm.className = 'timer'; tm.dataset.sec = s.dataset.timer; s.append(tm); setupTimer(tm); }
+  });
+  function setupTimer(el) {
+    let left = +el.dataset.sec, run = false, iv = null;
+    const show = () => { const m = Math.floor(left / 60), s = left % 60; el.innerHTML = `${m}:${String(s).padStart(2, '0')}<small>${run ? '點一下暫停' : left === +el.dataset.sec ? '點一下開始計時' : '點一下繼續・雙擊重設'}</small>`; };
+    el.onclick = e => { e.stopPropagation(); run = !run; el.classList.toggle('run', run); if (run) iv = setInterval(() => { left--; if (left <= 0) { left = 0; clearInterval(iv); run = false; el.classList.remove('run'); el.classList.add('done'); beep(); } show(); }, 1000); else clearInterval(iv); show(); };
+    el.ondblclick = e => { e.stopPropagation(); clearInterval(iv); run = false; left = +el.dataset.sec; el.classList.remove('run', 'done'); show(); };
+    show();
+  }
+  function beep() { try { const a = new (window.AudioContext || window.webkitAudioContext)(); [0, .35, .7].forEach(t => { const o = a.createOscillator(), g = a.createGain(); o.frequency.value = 880; o.connect(g); g.connect(a.destination); g.gain.value = .15; o.start(a.currentTime + t); o.stop(a.currentTime + t + .2); }); } catch (e) { } }
+  // 縮放
+  function fit() { const k = Math.min(innerWidth / 1280, innerHeight / 720); stage.style.transform = `translate(-50%,-50%) scale(${k})`; }
+  addEventListener('resize', fit); fit();
+  // 逐步顯示
+  slides.forEach(s => s.querySelectorAll('.frag').forEach(f => f.classList.add('hid')));
+  function show(i, back) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('on', k === cur));
+    const s = slides[cur];
+    if (back) s.querySelectorAll('.frag').forEach(f => f.classList.remove('hid'));
+    s.querySelectorAll('iframe[data-src]').forEach(f => { if (!f.src) f.src = f.dataset.src; });
+    document.getElementById('notes').innerHTML = `<b>教師提示（第 ${cur + 1} 頁）</b><br>${s.dataset.notes || '—'}`;
+    try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) { }   // 預覽視窗等沙盒環境不允許改網址，忽略即可
+    document.querySelectorAll('#ov .it').forEach((it, k) => it.classList.toggle('cur', k === cur));
+  }
+  function next() { const h = slides[cur].querySelector('.frag.hid'); if (h) { h.classList.remove('hid'); return; } if (cur < slides.length - 1) show(cur + 1); }
+  function prev() { const v = [...slides[cur].querySelectorAll('.frag:not(.hid)')]; if (v.length) { v[v.length - 1].classList.add('hid'); return; } if (cur > 0) show(cur - 1, true); }
+  // 控制列
+  const ctrl = document.createElement('div'); ctrl.id = 'ctrl';
+  ctrl.innerHTML = `<a href="index.html" title="回首頁">🏠 首頁</a><button id="bOv" title="全部頁面（O）">☰</button><button id="bN" title="教師提示（N）">📝</button><button id="bF" title="全螢幕（F）">⛶</button><button id="bP">◀</button><button id="bX">▶</button>`;
+  document.body.append(ctrl);
+  const notes = document.createElement('div'); notes.id = 'notes'; document.body.append(notes);
+  const ov = document.createElement('div'); ov.id = 'ov'; ov.innerHTML = `<h2 style="font-size:24px;margin:0 0 14px">${LESSON}｜全部頁面</h2><div class="g">${slides.map((s, i) => `<div class="it" data-i="${i}"><b>${i + 1}．${s.dataset.tag || ''}</b>${s.dataset.title || (s.querySelector('h1,h2') || {}).textContent || ''}</div>`).join('')}</div>`;
+  document.body.append(ov);
+  ov.onclick = e => { const it = e.target.closest('.it'); if (it) show(+it.dataset.i); ov.classList.remove('show'); };
+  const fs = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  document.getElementById('bP').onclick = prev; document.getElementById('bX').onclick = next; document.getElementById('bF').onclick = fs;
+  document.getElementById('bN').onclick = () => notes.classList.toggle('show'); document.getElementById('bOv').onclick = () => ov.classList.toggle('show');
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input,select,textarea')) return;   // 在輸入框打字時不翻頁
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'f' || e.key === 'F') fs(); else if (e.key === 'n' || e.key === 'N') notes.classList.toggle('show');
+    else if (e.key === 'o' || e.key === 'O' || e.key === 'Escape') ov.classList.toggle('show', e.key !== 'Escape' && !ov.classList.contains('show'));
+    else if (e.key === 'Home') show(0); else if (e.key === 'End') show(slides.length - 1);
+  });
+  // 點畫面右側 2/3 前進、左側 1/3 後退（按鈕、連結、輸入框除外）
+  stage.addEventListener('click', e => { if (e.target.closest('a,button,iframe,.timer,.copy,input,select')) return; (e.clientX < innerWidth / 3 ? prev : next)(); });
+  let tx = null; addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+  addEventListener('touchend', e => { if (tx == null) return; const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 60) (d < 0 ? next : prev)(); tx = null; });
+  // 複製提示詞
+  document.querySelectorAll('.copy').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.parentElement.querySelector('.ptxt').innerText; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => b.textContent = '✔ 已複製').catch(() => b.textContent = '請手動選取複製'); });
+  // 學生連結 QR（需網路；無網路時只顯示網址）
+  const qr = document.getElementById('qr');
+  if (qr) { const url = location.href.split('#')[0]; const u = document.getElementById('qrurl'); if (u) u.textContent = url;
+    const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    sc.onload = () => { try { new QRCode(qr, { text: url, width: 220, height: 220 }); } catch (e) { } }; sc.onerror = () => qr.style.display = 'none'; document.head.append(sc); }
+  addEventListener('hashchange', () => { const n = parseInt(location.hash.slice(1)); if (n && n - 1 !== cur) show(n - 1); });
+  show(Math.max(0, (parseInt(location.hash.slice(1)) || 1) - 1));
+})();
+</script></body></html>
