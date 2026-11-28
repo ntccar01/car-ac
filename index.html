@@ -95,15 +95,13 @@ body.haspanel .stage canvas{max-height:calc(100vh - 210px)}
 @media(max-width:600px){.quiz .card.withref.wideref #qo{grid-template-columns:1fr}}
 .quiz{position:fixed;z-index:60}
 
-/* 互動章節完成提示（2026-11-13） */
+/* 互動章節完成提示：置於右側章節欄下方，100% 不遮擋主畫面 */
 .stage{position:relative}
-.readytip{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;transition:.35s;background:rgba(14,40,26,.96);border:3px solid #3ad07a;border-radius:16px;padding:12px 18px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:20;max-width:92%}
-.readytip.show{opacity:1;pointer-events:auto;transform:translateX(-50%)}
-.readytip .rt1{font-size:20px;font-weight:800;color:#bff5d3;margin-bottom:8px}
-.readytip .rt2{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.readytip .rgo{background:#3ad07a;color:#04220f;border:0;border-radius:12px;font-size:20px;font-weight:900;padding:10px 22px;cursor:pointer;animation:finpulse 1.2s infinite}
-.readytip .rstay{background:transparent;color:#bff5d3;border:1px solid #3ad07a;border-radius:12px;font-size:15px;padding:8px 14px;cursor:pointer}
-button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:18px!important;font-weight:900!important;padding:10px 18px!important;animation:finpulse 1.2s infinite}
+.readytip{display:none;margin-top:8px;background:rgba(14,40,26,.96);border:2px solid #3ad07a;border-radius:10px;padding:10px 10px;text-align:center}
+.readytip.show{display:block}
+.readytip .rt1{font-size:15px;font-weight:800;color:#bff5d3;margin-bottom:8px}
+.readytip .rgo{width:100%;background:#3ad07a;color:#04220f;border:0;border-radius:8px;font-size:15px;font-weight:900;padding:8px 12px;cursor:pointer;animation:finpulse 1.2s infinite;font-family:inherit}
+button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:14px!important;font-weight:900!important;padding:5px 12px!important;animation:finpulse 1.2s infinite}
 @keyframes finpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,208,122,.7)}50%{box-shadow:0 0 0 10px rgba(58,208,122,0)}}
 .finneed{margin-top:8px;padding:8px 12px;border-radius:10px;background:#3a2a00;border:1px solid #ffb020;color:#ffe2a0;font-size:15px;line-height:1.6}
 

@@ -97,15 +97,13 @@ body.haspanel .stage canvas{max-height:calc(100vh - 210px)}
 @media(max-width:600px){.quiz .card.withref.wideref #qo{grid-template-columns:1fr}}
 .quiz{position:fixed;z-index:60}
 
-/* 互動章節完成提示（2026-11-13） */
+/* 互動章節完成提示：置於右側章節欄下方，100% 不遮擋主畫面 */
 .stage{position:relative}
-.readytip{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;transition:.35s;background:rgba(14,40,26,.96);border:3px solid #3ad07a;border-radius:16px;padding:12px 18px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:20;max-width:92%}
-.readytip.show{opacity:1;pointer-events:auto;transform:translateX(-50%)}
-.readytip .rt1{font-size:20px;font-weight:800;color:#bff5d3;margin-bottom:8px}
-.readytip .rt2{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.readytip .rgo{background:#3ad07a;color:#04220f;border:0;border-radius:12px;font-size:20px;font-weight:900;padding:10px 22px;cursor:pointer;animation:finpulse 1.2s infinite}
-.readytip .rstay{background:transparent;color:#bff5d3;border:1px solid #3ad07a;border-radius:12px;font-size:15px;padding:8px 14px;cursor:pointer}
-button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:18px!important;font-weight:900!important;padding:10px 18px!important;animation:finpulse 1.2s infinite}
+.readytip{display:none;margin-top:8px;background:rgba(14,40,26,.96);border:2px solid #3ad07a;border-radius:10px;padding:10px 10px;text-align:center}
+.readytip.show{display:block}
+.readytip .rt1{font-size:15px;font-weight:800;color:#bff5d3;margin-bottom:8px}
+.readytip .rgo{width:100%;background:#3ad07a;color:#04220f;border:0;border-radius:8px;font-size:15px;font-weight:900;padding:8px 12px;cursor:pointer;animation:finpulse 1.2s infinite;font-family:inherit}
+button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:14px!important;font-weight:900!important;padding:5px 12px!important;animation:finpulse 1.2s infinite}
 @keyframes finpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,208,122,.7)}50%{box-shadow:0 0 0 10px rgba(58,208,122,0)}}
 .finneed{margin-top:8px;padding:8px 12px;border-radius:10px;background:#3a2a00;border:1px solid #ffb020;color:#ffe2a0;font-size:15px;line-height:1.6}
 
@@ -331,7 +329,7 @@ function Player(cfg) {
   document.body.innerHTML = `<div class="wrap">
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
-    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div><div class="readytip" id="rtip"><div class="rt1">🎉 這一段的任務完成了！</div><div class="rt2"><button class="rgo" onclick="finishLoop()">前往下一段 ▶</button><button class="rstay" id="rstay">再看看</button></div></div>
+    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
       <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="qtip" id="qt"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
@@ -345,7 +343,7 @@ function Player(cfg) {
     <div class="caption" id="cap"></div>
     <div class="panel" id="panel"></div>
   </div>
-  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div><div class="readytip" id="rtip"><div class="rt1">🎉 本段任務完成！</div><button class="rgo" onclick="finishLoop()">前往下一段 ▶</button></div></aside></div></div>`;
   const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
   const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
@@ -475,7 +473,7 @@ function Player(cfg) {
     if (r) { $('#rtip').classList.add('show'); const b = finBtns()[0]; if (b) setTimeout(() => b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300); }
     else $('#rtip').classList.remove('show');
   }
-  $('#rstay').onclick = e => { e.stopPropagation(); $('#rtip').classList.remove('show'); };
+  if ($('#rstay')) $('#rstay').onclick = e => { e.stopPropagation(); $('#rtip').classList.remove('show'); };
   window.finishLoop = () => { const c = chs[ci];
     if (c.ready && !c.ready(S) && !skipWarn) { skipWarn = true; const b = finBtns()[0];
       if (b && !$('#finNeed')) { const d = document.createElement('div'); d.id = 'finNeed'; d.className = 'finneed'; b.closest('.row').after(d); }
