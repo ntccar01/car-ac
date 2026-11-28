@@ -62,7 +62,10 @@ body.haspanel .stage canvas{max-height:calc(100vh - 210px)}
 .quiz .opt.right{background:#16452d;border-color:var(--ok)}
 .quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
 .quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
-.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.quiz .qfoot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.quiz .go{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.quiz .qback{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:15px;cursor:pointer;font-family:inherit}
+.quiz .qback:hover{border-color:var(--acc2);color:var(--acc2)}
 .endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
 .endcard.show{display:flex}
 .endcard div{font-size:22px;line-height:1.8}
@@ -102,7 +105,9 @@ body.haspanel .stage canvas{max-height:calc(100vh - 210px)}
 .readytip{display:none;margin-top:8px;background:rgba(14,40,26,.96);border:2px solid #3ad07a;border-radius:10px;padding:10px 10px;text-align:center}
 .readytip.show{display:block}
 .readytip .rt1{font-size:15px;font-weight:800;color:#bff5d3;margin-bottom:8px}
-.readytip .rgo{width:100%;background:#3ad07a;color:#04220f;border:0;border-radius:8px;font-size:15px;font-weight:900;padding:8px 12px;cursor:pointer;animation:finpulse 1.2s infinite;font-family:inherit}
+.readytip .rgo{width:100%;background:#3ad07a;color:#04220f;border:0;border-radius:8px;font-size:14px;font-weight:900;padding:8px 10px;cursor:pointer;animation:finpulse 1.2s infinite;font-family:inherit}
+.readytip .rrew{width:100%;margin-top:6px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;padding:6px 10px;cursor:pointer;font-family:inherit;display:none}
+.readytip .rrew:hover{border-color:var(--acc2);color:var(--acc2)}
 button.finready{background:#3ad07a!important;color:#04220f!important;border-color:#3ad07a!important;font-size:14px!important;font-weight:900!important;padding:5px 12px!important;animation:finpulse 1.2s infinite}
 @keyframes finpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,208,122,.7)}50%{box-shadow:0 0 0 10px rgba(58,208,122,0)}}
 .finneed{margin-top:8px;padding:8px 12px;border-radius:10px;background:#3a2a00;border:1px solid #ffb020;color:#ffe2a0;font-size:15px;line-height:1.6}
@@ -330,7 +335,7 @@ function Player(cfg) {
   <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
-      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="qtip" id="qt"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qr" class="qref"></div><div id="qo"></div><div class="qtip" id="qt"></div><div class="ex" id="qe"></div><div class="qfoot"><button class="go" id="qgo">繼續下一段 ▶</button><button class="qback" id="qback">🔄 觀念不清？回看本段</button></div></div></div>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
@@ -343,7 +348,7 @@ function Player(cfg) {
     <div class="caption" id="cap"></div>
     <div class="panel" id="panel"></div>
   </div>
-  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div><div class="readytip" id="rtip"><div class="rt1">🎉 本段任務完成！</div><button class="rgo" onclick="finishLoop()">前往下一段 ▶</button></div></aside></div></div>`;
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束先確認觀念，答對小題目即可繼續。</div><div class="readytip" id="rtip"><div class="rt1" id="rt1">🎉 本段任務完成！</div><button class="rgo" id="rgo">前往下一段 ▶</button><button class="rrew" id="rrew">🔄 再看一次本段</button></div></aside></div></div>`;
   const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
   const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
@@ -410,7 +415,28 @@ function Player(cfg) {
       else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint || '可以按「上一段」或點章節重看。'); }
     };
   }
-  $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); nextOrEnd(); };
+  $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); $('#panel').style.display = ''; nextOrEnd(); };
+  $('#qback').onclick = () => {
+    $('#quiz').classList.remove('show'); $('#panel').style.display = '';
+    const c = chs[ci];
+    if (!c.loop) { t = 0; lastCap = ''; showEndTip(true); setPlay(true); }
+    else { showLoopTip(); }
+  };
+  function showEndTip(fromBack) {
+    $('#rt1').textContent = fromBack ? '💡 回看本段中，看懂後點此作答' : '💡 本段播完了！觀念清楚了嗎？';
+    $('#rgo').textContent = '📝 觀念清楚，開始作答 ▶';
+    $('#rgo').onclick = () => { $('#rtip').classList.remove('show'); showQuiz(); };
+    $('#rrew').style.display = 'block';
+    $('#rrew').onclick = () => { t = 0; lastCap = ''; stopTTS(); setPlay(true); };
+    $('#rtip').classList.add('show');
+  }
+  function showLoopTip() {
+    $('#rt1').textContent = '🎉 本段任務完成！';
+    $('#rgo').textContent = '前往下一段 ▶';
+    $('#rgo').onclick = () => window.finishLoop();
+    $('#rrew').style.display = 'none';
+    $('#rtip').classList.add('show');
+  }
   function nextOrEnd() {
     if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
     else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
@@ -447,7 +473,7 @@ function Player(cfg) {
     const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
     if (playing) { let nt = t + dt * speed;
       if (speaking && !c.loop && $('#tts').checked) { spoken += dt; const m = nextMark(c, t); if (nt >= m - .02 && spoken < spokenMax) nt = Math.max(t, m - .02); }
-      t = nt; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+      t = nt; if (!c.loop && t >= c.dur) { t = c.dur; setPlay(false); if (c.quiz && !passed[ci]) showEndTip(false); else { passed[ci] = true; nextOrEnd(); } } }
     // 字幕
     let cap = '', say = ''; (c.captions || []).forEach(([at, s, sy]) => { if (t >= at) { cap = s; say = sy; } });
     if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) { try { speak(cap, say); } catch (e) { speaking = false; } } }
@@ -470,7 +496,7 @@ function Player(cfg) {
   function markReady(r) {
     finBtns().forEach(b => { b.classList.toggle('finready', r); b.textContent = r ? '✔ 完成本段，前往下一段 ▶' : '完成本段 ✔'; });
     const n = $('#finNeed'); if (n) n.remove();
-    if (r) { $('#rtip').classList.add('show'); const b = finBtns()[0]; if (b) setTimeout(() => b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300); }
+    if (r) { showLoopTip(); const b = finBtns()[0]; if (b) setTimeout(() => b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300); }
     else $('#rtip').classList.remove('show');
   }
   if ($('#rstay')) $('#rstay').onclick = e => { e.stopPropagation(); $('#rtip').classList.remove('show'); };
