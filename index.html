@@ -24,6 +24,11 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
 .bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
 .bar div.done i{background:var(--ok)}
+.scrubrow{display:flex;align-items:center;gap:10px;margin-top:8px;padding:4px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.scrubrow.hide{display:none}
+.scrubrow span{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scrubrow input[type=range]{flex:1;margin:0;accent-color:var(--acc);cursor:pointer;height:20px}
+.embed .scrubrow{margin-top:4px;padding:2px 8px}
 .side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
 .side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
 .side ol{list-style:none;margin:0;padding:0}

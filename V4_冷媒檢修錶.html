@@ -26,6 +26,11 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
 .bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
 .bar div.done i{background:var(--ok)}
+.scrubrow{display:flex;align-items:center;gap:10px;margin-top:8px;padding:4px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.scrubrow.hide{display:none}
+.scrubrow span{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scrubrow input[type=range]{flex:1;margin:0;accent-color:var(--acc);cursor:pointer;height:20px}
+.embed .scrubrow{margin-top:4px;padding:2px 8px}
 .side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
 .side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
 .side ol{list-style:none;margin:0;padding:0}
@@ -331,6 +336,7 @@ function Player(cfg) {
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
+    <div class="scrubrow" id="scrubrow" title="拖曳拉桿可直接跳至本段任意畫面，方便課堂暫停解說"><span id="scCur">0.0s</span><input type="range" id="scrub" min="0" max="10" step="0.1" value="0" aria-label="本段時間軸拉桿"><span id="scMax">10s</span></div>
     <div class="controls">
       <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
       <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
@@ -356,6 +362,16 @@ function Player(cfg) {
   $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
   $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
   $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
+  let scrubbing = false;
+  const scrub = $('#scrub'), scrubRow = $('#scrubrow');
+  scrub.oninput = () => {
+    const c = chs[ci]; if (c.loop) return;
+    scrubbing = true; setPlay(false); stopTTS();
+    t = clamp(+scrub.value, 0, Math.max(0, c.dur - 0.05));
+    let cap = ''; (c.captions || []).forEach(([at, s]) => { if (t >= at) cap = s; });
+    lastCap = cap; $('#cap').innerHTML = cap;
+  };
+  scrub.onchange = () => { scrubbing = false; };
   $('#spd').onchange = e => { speed = +e.target.value; if (curAudio) curAudio.playbackRate = Math.min(2, Math.max(.5, speed)); };
   $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) { stopTTS(); } else { lastCap = ''; } };
   document.addEventListener('keydown', e => {
@@ -442,6 +458,12 @@ function Player(cfg) {
     if (c.loop && c.ready) { const r = !!c.ready(S); if (r !== lastReady) { lastReady = r; markReady(r); } }
     const d = durOf(c), shown = c.loop ? (t % d) : t;
     $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
+    scrubRow.classList.toggle('hide', !!c.loop);
+    if (!c.loop) {
+      if (+scrub.max !== d) { scrub.max = d; $('#scMax').textContent = d.toFixed(0) + 's'; }
+      if (!scrubbing) scrub.value = clamp(t, 0, d).toFixed(1);
+      $('#scCur').textContent = clamp(t, 0, d).toFixed(1) + 's';
+    }
     [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
     requestAnimationFrame(frame);
   }
