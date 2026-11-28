@@ -3,21 +3,23 @@
 <title>V1 冷媒與環保安全</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
-.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.wrap{max-width:1240px;margin:0 auto;padding:8px 14px 16px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
-header h1{font-size:22px;margin:0}
+header h1{font-size:21px;margin:0}
 header .sub{color:var(--mut);font-size:14px}
 header .score{margin-left:auto;color:var(--mut);font-size:14px}
-.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
+.main{display:grid;grid-template-columns:1fr 250px;gap:12px}
 @media(max-width:900px){.main{grid-template-columns:1fr}}
-.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
+.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center}
+.stage canvas{display:block;width:auto;max-width:100%;height:auto;max-height:calc(100vh - 235px);aspect-ratio:16/9;cursor:default}
+body.haspanel .stage canvas{max-height:calc(100vh - 305px)}
+@media(max-width:900px){.stage canvas,body.haspanel .stage canvas{width:100%;max-height:none}}
 .chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
-.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
+.caption{min-height:48px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:8px;padding:9px 14px;font-size:18px;line-height:1.45}
 .caption b{color:var(--acc)}
-.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
-.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:15px;cursor:pointer;font-family:inherit}
 .controls button:hover{border-color:var(--acc2)}
 .controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
 .controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
@@ -1122,9 +1124,9 @@ const V1 = {
           const y = 104 + i * 74, on = i === S.refIdx;
           H.box(ctx, 70, y, 820, 58, { stroke: on ? r.col : '#334563', fill: on ? 'rgba(22,34,58,.96)' : '#111a2d' });
           H.text(ctx, r.name, 94, y + 29, { size: 19, bold: true, color: r.col });
-          const bw = Math.max(10, Math.log10(r.gwp + 1) * 95);
-          ctx.fillStyle = r.col; H.rr(ctx, 310, y + 18, bw, 22, 6); ctx.fill();
-          H.text(ctx, `GWP = ${r.gwp}`, 320 + bw + 12, y + 29, { size: 18, bold: true, color: '#fff' });
+          const bw = Math.max(10, Math.log10(r.gwp + 1) * 72);
+          ctx.fillStyle = r.col; H.rr(ctx, 290, y + 18, bw, 22, 6); ctx.fill();
+          H.text(ctx, `GWP = ${r.gwp}`, 290 + bw + 12, y + 29, { size: 18, bold: true, color: '#fff' });
           H.text(ctx, `ODP: ${r.odp.split('（')[0]}`, 865, y + 29, { size: 16, align: 'right', color: C.mut });
         });
         const r = REFS[S.refIdx];
