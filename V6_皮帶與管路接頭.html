@@ -3,54 +3,52 @@
 <title>V6 皮帶與管路接頭</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
-.wrap{max-width:1240px;margin:0 auto;padding:8px 14px 16px}
-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
-header h1{font-size:21px;margin:0}
-header .sub{color:var(--mut);font-size:14px}
-header .score{margin-left:auto;color:var(--mut);font-size:14px}
-.main{display:grid;grid-template-columns:1fr 250px;gap:12px}
+.wrap{max-width:1320px;margin:0 auto;padding:5px 12px 10px}
+header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:5px;padding:2px 8px;font-size:13px}
+header h1{font-size:17px;margin:0}
+header .sub{color:var(--mut);font-size:12px}
+header .score{margin-left:auto;color:var(--mut);font-size:13px}
+.main{display:grid;grid-template-columns:1fr 220px;gap:10px}
 @media(max-width:900px){.main{grid-template-columns:1fr}}
 .stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center}
-.stage canvas{display:block;width:auto;max-width:100%;height:auto;max-height:calc(100vh - 235px);aspect-ratio:16/9;cursor:default}
-body.haspanel .stage canvas{max-height:calc(100vh - 305px)}
+.stage canvas{display:block;width:auto;max-width:100%;height:auto;max-height:calc(100vh - 148px);aspect-ratio:16/9;cursor:default}
+body.haspanel .stage canvas{max-height:calc(100vh - 210px)}
 @media(max-width:900px){.stage canvas,body.haspanel .stage canvas{width:100%;max-height:none}}
-.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
-.caption{min-height:48px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:8px;padding:9px 14px;font-size:18px;line-height:1.45}
+.chtitle{position:absolute;left:10px;top:8px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:13px;color:var(--acc)}
+.caption{min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-top:5px;padding:6px 12px;font-size:15px;line-height:1.45}
 .caption b{color:var(--acc)}
-.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
-.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px;padding:4px 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:13px;cursor:pointer;font-family:inherit}
 .controls button:hover{border-color:var(--acc2)}
-.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
-.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
-.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
-.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
+.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:68px}
+.controls .time{color:var(--mut);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.controls label{color:var(--mut);font-size:13px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap}
+.scrubwrap{display:flex;align-items:center;gap:6px;flex:1;min-width:160px;margin:0 4px}
+.scrubwrap span{color:var(--mut);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scrubwrap input[type=range]{flex:1;margin:0;accent-color:var(--acc);cursor:pointer;height:16px}
+.bar{display:flex;gap:3px;margin-top:5px;height:7px;cursor:pointer}
 .bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
 .bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
 .bar div.done i{background:var(--ok)}
-.scrubrow{display:flex;align-items:center;gap:10px;margin-top:8px;padding:4px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
-.scrubrow.hide{display:none}
-.scrubrow span{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.scrubrow input[type=range]{flex:1;margin:0;accent-color:var(--acc);cursor:pointer;height:20px}
-.embed .scrubrow{margin-top:4px;padding:2px 8px}
-.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
-.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;align-self:start}
+.side h3{margin:2px 4px 6px;font-size:14px;color:var(--mut)}
 .side ol{list-style:none;margin:0;padding:0}
-.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
+.side li{padding:6px 8px;border-radius:7px;cursor:pointer;font-size:13px;display:flex;gap:6px;align-items:center}
 .side li:hover{background:var(--panel2)}
 .side li.on{background:var(--panel2);outline:1px solid var(--acc)}
-.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.side li .n{width:20px;height:20px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:11px;flex:none}
 .side li.ok .n{background:var(--ok);color:#002010}
-.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
-.panel{margin-top:10px}
+.side .tips{color:var(--mut);font-size:12px;line-height:1.5;margin:8px 4px 2px;border-top:1px solid var(--line);padding-top:6px}
+.panel{margin-top:5px}
 .panel:empty{display:none}
-.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
-.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
-.panel input[type=range]{width:200px}
-.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.panel .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:3px 0;font-size:14px}
+.panel input[type=number]{width:66px;font-size:14px;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
+.panel input[type=range]{width:180px}
+.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer;font-family:inherit}
 .panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
-.panel .res{font-size:17px;line-height:1.8}
+.panel .res{font-size:14px;line-height:1.5}
 .panel .res b{color:var(--acc)}
 .panel .fb{font-weight:700}
 .panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
@@ -71,7 +69,7 @@ body.haspanel .stage canvas{max-height:calc(100vh - 305px)}
 .endcard b{color:var(--acc);font-size:30px}
 @media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
 .chtitle.hide{opacity:0}
-.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:13px;text-decoration:none;font-weight:700}
 .home:hover{border-color:var(--acc);color:var(--acc)}
 .home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
 /* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
@@ -83,7 +81,7 @@ body.haspanel .stage canvas{max-height:calc(100vh - 305px)}
 .embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
 .embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
 
-.actbtn{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.actbtn{background:var(--ok);color:#002010;border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 #actwrap{display:none}
 
 .qref{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px}.qref canvas{width:190px;height:190px;background:#0d1526;border-radius:50%}.qref .qn{font-size:14px;color:#9fb0cf;line-height:1.6;max-width:300px}
@@ -338,11 +336,11 @@ function Player(cfg) {
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
-    <div class="scrubrow" id="scrubrow" title="拖曳拉桿可直接跳至本段任意畫面，方便課堂暫停解說"><span id="scCur">0.0s</span><input type="range" id="scrub" min="0" max="10" step="0.1" value="0" aria-label="本段時間軸拉桿"><span id="scMax">10s</span></div>
     <div class="controls">
       <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
+      <div class="scrubwrap" id="scrubrow" title="拖曳拉桿可直接跳至本段任意畫面，方便課堂暫停解說"><span id="scCur">0.0s</span><input type="range" id="scrub" min="0" max="10" step="0.1" value="0" aria-label="本段時間軸拉桿"><span id="scMax">10s</span></div>
       <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
-      <label><input type="checkbox" id="tts">🔊 語音旁白</label><span class="time" id="tm"></span>
+      <label><input type="checkbox" id="tts">🔊 旁白</label><span class="time" id="tm"></span>
     </div>
     <div class="caption" id="cap"></div>
     <div class="panel" id="panel"></div>
