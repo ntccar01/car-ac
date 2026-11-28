@@ -336,11 +336,14 @@ function QuizApp(cfg) {
       detail.push({ round: it.tag, got: ok ? 1 : 0, of: 1 });
     });
     const pct = total ? Math.round(score / total * 100) : 0;
+    // Firestore engine_scores 規則限制 grp <= 30；座號超過 30 時編碼於 cls（如 汽車301#50），由教師大螢幕自動還原
+    const wireCls = state.seat > 30 ? `${state.cls.slice(0, 16)}#${state.seat}` : state.cls;
+    const wireGrp = state.seat > 30 ? 1 : state.seat;
     const rec = {
       lesson: cfg.code,
       title: cfg.title,
-      cls: state.cls,
-      grp: state.seat,
+      cls: wireCls,
+      grp: wireGrp,
       score,
       total,
       pct,
